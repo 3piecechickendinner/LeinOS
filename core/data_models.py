@@ -23,6 +23,24 @@ class PaymentStatus(str, Enum):
     FAILED = "FAILED"
 
 
+class NotificationType(str, Enum):
+    """Type of notification."""
+    DEADLINE_APPROACHING = "DEADLINE_APPROACHING"
+    PAYMENT_RECEIVED = "PAYMENT_RECEIVED"
+    PAYMENT_OVERDUE = "PAYMENT_OVERDUE"
+    REDEMPTION_PERIOD_ENDING = "REDEMPTION_PERIOD_ENDING"
+    DOCUMENT_GENERATED = "DOCUMENT_GENERATED"
+    INTEREST_CALCULATED = "INTEREST_CALCULATED"
+
+
+class DocumentType(str, Enum):
+    """Type of generated document."""
+    REDEMPTION_NOTICE = "REDEMPTION_NOTICE"
+    PORTFOLIO_REPORT = "PORTFOLIO_REPORT"
+    PAYMENT_RECEIPT = "PAYMENT_RECEIPT"
+    TAX_FORM = "TAX_FORM"
+
+
 class Lien(BaseModel):
     """Tax lien model."""
     lien_id: str = Field(..., description="Unique identifier for the lien")
@@ -155,3 +173,123 @@ class AgentContext(BaseModel):
         """Serialize datetime to ISO format string."""
         return value.isoformat()
 
+
+class Deadline(BaseModel):
+    """Deadline model for tracking lien deadlines and alerts."""
+    deadline_id: str = Field(..., description="Unique identifier for the deadline")
+    lien_id: str = Field(..., description="Identifier of the associated lien")
+    tenant_id: str = Field(..., description="Tenant identifier for multi-tenancy")
+    deadline_type: str = Field(..., description="Type of deadline (e.g., redemption)")
+    deadline_date: date = Field(..., description="The deadline date")
+    description: str = Field(..., description="Description of the deadline")
+    alert_days_before: List[int] = Field(default=[90, 60, 30, 14, 7, 3, 1], description="Days before deadline to send alerts")
+    alerts_sent: List[date] = Field(default_factory=list, description="Dates when alerts were sent")
+    is_completed: bool = Field(default=False, description="Whether the deadline has been completed")
+    completed_at: Optional[datetime] = Field(None, description="When the deadline was completed")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp when the deadline was created")
+
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+            date: lambda v: v.isoformat(),
+        }
+    )
+
+    @field_serializer('deadline_date')
+    def serialize_date(self, value: date, _info) -> str:
+        """Serialize date to ISO format string."""
+        return value.isoformat()
+
+    @field_serializer('alerts_sent')
+    def serialize_alerts_sent(self, value: List[date], _info) -> List[str]:
+        """Serialize list of dates to ISO format strings."""
+        return [d.isoformat() for d in value]
+
+    @field_serializer('created_at', 'completed_at')
+    def serialize_datetime(self, value: Optional[datetime], _info) -> Optional[str]:
+        """Serialize datetime to ISO format string."""
+        return value.isoformat() if value else None
+
+
+class Notification(BaseModel):
+    """Notification model for alerts and messages."""
+    notification_id: str = Field(..., description="Unique identifier for the notification")
+    tenant_id: str = Field(..., description="Tenant identifier for multi-tenancy")
+    lien_id: Optional[str] = Field(None, description="Identifier of the associated lien")
+    notification_type: NotificationType = Field(..., description="Type of notification")
+    title: str = Field(..., description="Notification title")
+    message: str = Field(..., description="Notification message body")
+    priority: str = Field(default="normal", description="Priority level (low, normal, high)")
+    channels: List[str] = Field(default=["email"], description="Delivery channels")
+    sent_at: Optional[datetime] = Field(None, description="When the notification was sent")
+    read_at: Optional[datetime] = Field(None, description="When the notification was read")
+    action_required: bool = Field(default=False, description="Whether user action is required")
+    action_url: Optional[str] = Field(None, description="URL for the required action")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp when created")
+
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda v: v.isoformat() if v else None,
+        }
+    )
+
+    @field_serializer('sent_at', 'read_at', 'created_at')
+    def serialize_datetime(self, value: Optional[datetime], _info) -> Optional[str]:
+        """Serialize datetime to ISO format string."""
+        return value.isoformat() if value else None
+
+
+class Portfolio(BaseModel):
+    """Portfolio summary model for dashboard analytics."""
+    portfolio_id: str = Field(..., description="Unique identifier for the portfolio snapshot")
+    tenant_id: str = Field(..., description="Tenant identifier for multi-tenancy")
+    total_liens: int = Field(default=0, description="Total number of liens")
+    active_liens: int = Field(default=0, description="Number of active liens")
+    total_invested: Decimal = Field(default=Decimal("0"), description="Total amount invested")
+    total_interest_earned: Decimal = Field(default=Decimal("0"), description="Total interest earned")
+    total_redeemed: int = Field(default=0, description="Number of redeemed liens")
+    liens_by_status: Dict[str, int] = Field(default_factory=dict, description="Lien count by status")
+    liens_by_county: Dict[str, int] = Field(default_factory=dict, description="Lien count by county")
+    average_return_rate: Decimal = Field(default=Decimal("0"), description="Average return rate percentage")
+    average_holding_period_days: int = Field(default=0, description="Average holding period in days")
+    calculated_at: datetime = Field(default_factory=datetime.utcnow, description="When the portfolio was calculated")
+
+    model_config = ConfigDict(
+        json_encoders={
+            Decimal: float,
+            datetime: lambda v: v.isoformat(),
+        }
+    )
+
+    @field_serializer('total_invested', 'total_interest_earned', 'average_return_rate')
+    def serialize_decimal(self, value: Decimal, _info) -> float:
+        """Serialize Decimal to float."""
+        return float(value)
+
+    @field_serializer('calculated_at')
+    def serialize_datetime(self, value: datetime, _info) -> str:
+        """Serialize datetime to ISO format string."""
+        return value.isoformat()
+
+
+class Document(BaseModel):
+    """Document model for generated documents."""
+    document_id: str = Field(..., description="Unique identifier for the document")
+    tenant_id: str = Field(..., description="Tenant identifier for multi-tenancy")
+    lien_id: Optional[str] = Field(None, description="Identifier of the associated lien")
+    document_type: DocumentType = Field(..., description="Type of document")
+    title: str = Field(..., description="Document title")
+    content: str = Field(..., description="Document content (HTML or text)")
+    format: str = Field(default="html", description="Document format (html, pdf, txt)")
+    generated_at: datetime = Field(default_factory=datetime.utcnow, description="When the document was generated")
+
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+        }
+    )
+
+    @field_serializer('generated_at')
+    def serialize_datetime(self, value: datetime, _info) -> str:
+        """Serialize datetime to ISO format string."""
+        return value.isoformat()

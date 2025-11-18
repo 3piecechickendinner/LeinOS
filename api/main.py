@@ -4,10 +4,12 @@ LienOS FastAPI Application
 REST API exposing all agent capabilities for tax lien management.
 """
 
+import os
 from typing import Dict, Any, List, Optional
 from datetime import date
 from decimal import Decimal
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -21,6 +23,8 @@ from agents.communication.agent import CommunicationAgent
 from agents.portfolio_dashboard.agent import PortfolioDashboardAgent
 from agents.document_generator.agent import DocumentGeneratorAgent
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -39,7 +43,11 @@ app.add_middleware(
 )
 
 # Initialize storage client
-storage = FirestoreClient()
+# For local development without Google Cloud credentials, set GOOGLE_PROJECT_ID to "local-dev"
+# or leave it unset. The FirestoreClient will handle mock/local storage accordingly.
+# For production, set GOOGLE_PROJECT_ID to your actual Google Cloud project ID.
+project_id = os.getenv("GOOGLE_PROJECT_ID", "local-dev")
+storage = FirestoreClient(project_id=project_id)
 
 
 # =============================================================================
