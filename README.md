@@ -1,187 +1,314 @@
-# LienOS - AI-Powered Tax Lien Management Platform
+# LienOS
 
-Production-ready, multi-tenant SaaS platform for automating tax lien investment operations using Google's Agent Development Kit (ADK).
+![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow.svg)
 
-## Overview
+**AI-Powered Tax Lien Portfolio Management System**
 
-LienOS is a comprehensive platform that automates tax lien management workflows through intelligent AI agents. Built with Google's Gemini models and Firestore, it provides secure, scalable multi-tenant infrastructure for managing tax lien portfolios, calculating interest, processing payments, and generating insights.
+LienOS is an intelligent multi-agent system that automates tax lien investment operations. Unlike passive tracking tools, LienOS employs proactive AI agents that monitor deadlines, calculate interest, process payments, and generate documents—all without manual intervention.
 
-## Tech Stack
+## Why LienOS?
 
-- **Python 3.11+** - Core language
-- **Google Agent Development Kit (ADK)** - Agent framework
-- **Google Gemini 2.0 Flash** - AI model for agent reasoning
-- **Google Cloud Firestore** - Multi-tenant data storage
-- **Pydantic** - Data validation and serialization
-- **Python-dotenv** - Environment configuration
+Tax lien investing is profitable but operationally complex. Investors must track redemption deadlines, calculate accruing interest, manage payments, and generate legal documents across potentially hundreds of liens. Missing a single deadline can mean losing an investment.
 
-## Project Structure
+**LienOS solves this with AI agents that:**
+- Proactively alert you before deadlines (90, 60, 30, 14, 7, 3, 1 days)
+- Automatically calculate interest using state-specific rules
+- Track payments and detect full redemption
+- Generate professional documents on demand
+- Provide portfolio analytics and recommendations
 
-```
-lien-os/
-├── core/                    # Core platform functionality
-│   ├── base_agent.py        # Base agent class for all agents
-│   ├── data_models.py       # Pydantic models (Lien, Payment, etc.)
-│   └── storage.py           # Firestore client with multi-tenant security
-├── agents/                  # Agent implementations
-│   └── interest_calculator/ # Interest calculation agent
-│       └── agent.py
-├── shared_tools/            # Shared tools and utilities
-├── tests/                   # Test suite
-├── test_interest_calculator.py  # Quick test script
-├── requirements.txt         # Python dependencies
-└── README.md               # This file
-```
+**Built for:** Tax lien investors, real estate course graduates, and investment firms managing lien portfolios.
 
-## Installation
+---
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd lien-os
-   ```
+## Architecture
 
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+LienOS uses a **multi-agent architecture** powered by Google's Agent Development Kit (ADK) and Gemini AI models.
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### The 7-Agent System
 
-4. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
+| Agent | Responsibility |
+|-------|----------------|
+| **LienTrackerAgent** | CRUD operations for lien records |
+| **InterestCalculatorAgent** | Calculate accrued interest and total owed |
+| **DeadlineAlertAgent** | Monitor deadlines and send proactive alerts |
+| **PaymentMonitorAgent** | Record payments, detect redemption |
+| **CommunicationAgent** | Manage notifications, email/SMS queues |
+| **PortfolioDashboardAgent** | Analytics, performance metrics, recommendations |
+| **DocumentGeneratorAgent** | Generate notices, receipts, reports, tax forms |
 
-5. **Configure your `.env` file** with your Google Cloud credentials (see Configuration section below).
+### Tech Stack
 
-## Configuration
+- **AI Framework:** Google ADK + Gemini 2.0 Flash
+- **Backend:** FastAPI (async Python)
+- **Database:** Google Firestore (with local dev mode)
+- **Validation:** Pydantic v2
+- **Testing:** Pytest + pytest-asyncio
 
-Create a `.env` file in the root directory with the following variables:
+### Design Principles
+
+- **Multi-tenant:** Complete data isolation per tenant
+- **Agent-first:** Business logic lives in specialized agents
+- **Async throughout:** Non-blocking operations for scale
+- **Local-first development:** Works without cloud credentials
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- pip
+
+### Installation
 
 ```bash
-# Google Cloud Configuration
-GOOGLE_CLOUD_PROJECT_ID=your-project-id
+# Clone the repository
+git clone https://github.com/3piecechickendinner/LienOS.git
+cd lien-os
 
-# Google Gemini API
-GOOGLE_AI_API_KEY=your-gemini-api-key
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Optional: Logging level
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Run the API
+
+```bash
+# Start the development server
+uvicorn api.main:app --reload --port 8000
+```
+
+The API will be available at `http://localhost:8000`
+
+### Run Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_agents.py -v
+
+# Run with coverage
+pytest tests/ --cov=.
+```
+
+---
+
+## API Documentation
+
+Interactive API documentation is available when the server is running:
+
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+
+### Example API Calls
+
+**Create a Lien:**
+```bash
+curl -X POST http://localhost:8000/api/liens \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: my-tenant-id" \
+  -d '{
+    "certificate_number": "2024-001",
+    "purchase_amount": 5000,
+    "interest_rate": 18,
+    "sale_date": "2024-01-15",
+    "redemption_deadline": "2026-01-15",
+    "county": "Miami-Dade",
+    "property_address": "123 Main St, Miami, FL 33101",
+    "parcel_id": "12-34-56-789"
+  }'
+```
+
+**Calculate Interest:**
+```bash
+curl -X POST http://localhost:8000/api/interest/calculate \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: my-tenant-id" \
+  -d '{"lien_id": "lien_2024-001_20240115120000"}'
+```
+
+**Get Portfolio Summary:**
+```bash
+curl -X POST http://localhost:8000/api/portfolio/summary \
+  -H "X-Tenant-ID: my-tenant-id"
+```
+
+**Generate Redemption Notice:**
+```bash
+curl -X POST http://localhost:8000/api/documents/redemption-notice \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: my-tenant-id" \
+  -d '{"lien_id": "lien_2024-001_20240115120000"}'
+```
+
+**Check Deadlines:**
+```bash
+curl -X POST http://localhost:8000/api/deadlines/check \
+  -H "X-Tenant-ID: my-tenant-id"
+```
+
+---
+
+## Agent Details
+
+### LienTrackerAgent
+The core CRUD agent for managing tax lien records. Handles creation, retrieval, updates, listing with filters, and soft/hard deletion. Automatically creates associated deadlines when liens are added.
+
+### InterestCalculatorAgent
+Calculates accrued interest based on purchase amount, interest rate, and days elapsed. Supports simple interest calculation with plans for state-specific compound interest rules.
+
+### DeadlineAlertAgent
+Monitors redemption deadlines and sends alerts at configured intervals (default: 90, 60, 30, 14, 7, 3, 1 days before). Creates notifications that can be delivered via email, SMS, or in-app.
+
+### PaymentMonitorAgent
+Records payments against liens, calculates remaining balance, and automatically marks liens as REDEEMED when fully paid. Creates payment notifications and supports payment verification and reconciliation.
+
+### CommunicationAgent
+Manages the notification system including in-app alerts, email queue, and SMS queue. Handles marking notifications as read and provides filtering by type, priority, and read status.
+
+### PortfolioDashboardAgent
+Provides comprehensive portfolio analytics including total invested, interest earned, ROI calculations, and breakdowns by status/county. Generates actionable recommendations and calculates a portfolio health score.
+
+### DocumentGeneratorAgent
+Generates HTML documents including redemption notices, portfolio reports, payment receipts, and 1099-INT style tax summaries. Documents include proper formatting and can be extended to PDF generation.
+
+---
+
+## Development
+
+### Local vs Production Mode
+
+LienOS automatically detects its environment:
+
+**Local Development (default):**
+- Uses in-memory storage (data resets on restart)
+- No Google Cloud credentials needed
+- Set `GOOGLE_PROJECT_ID=local-dev` or leave unset
+
+**Production:**
+- Uses Google Firestore
+- Requires `GOOGLE_APPLICATION_CREDENTIALS`
+- Set `GOOGLE_PROJECT_ID` to your GCP project
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# Required for production
+GOOGLE_PROJECT_ID=your-gcp-project-id
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+
+# Optional
 LOG_LEVEL=INFO
 ```
 
-### Setting up Google Cloud
+### Project Structure
 
-1. **Create a Google Cloud Project:**
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project or select an existing one
-   - Note your Project ID
+```
+lien-os/
+├── api/
+│   └── main.py              # FastAPI application
+├── agents/
+│   ├── interest_calculator/ # Interest calculation agent
+│   ├── deadline_alert/      # Deadline monitoring agent
+│   ├── payment_monitor/     # Payment processing agent
+│   ├── lien_tracker/        # Lien CRUD agent
+│   ├── communication/       # Notification agent
+│   ├── portfolio_dashboard/ # Analytics agent
+│   └── document_generator/  # Document generation agent
+├── core/
+│   ├── base_agent.py        # Base agent class
+│   ├── data_models.py       # Pydantic models
+│   └── storage.py           # Storage abstraction
+├── tests/
+│   ├── conftest.py          # Pytest fixtures
+│   ├── test_agents.py       # Agent unit tests
+│   └── test_api.py          # API integration tests
+├── requirements.txt
+└── README.md
+```
 
-2. **Enable required APIs:**
-   - Enable Firestore API
-   - Enable Gemini API (or Vertex AI API)
+### Testing Guidelines
 
-3. **Set up authentication:**
-   - Create a service account with Firestore permissions
-   - Download the JSON key file
-   - Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your key file:
-     ```bash
-     export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/key.json"
-     ```
+- All tests use local storage mode (no cloud dependencies)
+- Use `pytest-asyncio` for async test functions
+- Create fixtures in `conftest.py` for reusable test data
+- Aim for >80% code coverage
+- Run tests before committing: `pytest tests/ -v`
 
-4. **Get Gemini API Key:**
-   - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Create an API key
-   - Add it to your `.env` file
-
-## Current Status
-
-🚧 **In Development** - Core infrastructure and Interest Calculator Agent complete
-
-### ✅ Completed
-
-- Multi-tenant Firestore storage layer with security enforcement
-- Base agent architecture (`LienOSBaseAgent`)
-- Data models (Lien, Payment, InterestCalculation, AgentContext)
-- Interest Calculator Agent
-- Test infrastructure
-
-### 🚧 In Progress
-
-- Additional specialized agents (see Roadmap)
+---
 
 ## Roadmap
 
-The platform will include 7 specialized AI agents:
+### Completed
+- [x] Core infrastructure (storage, base agent, data models)
+- [x] 7 AI agents with full capabilities
+- [x] FastAPI REST API with 25+ endpoints
+- [x] Comprehensive test suite (60+ tests)
+- [x] Local development mode (no cloud needed)
+- [x] Multi-tenant security enforcement
 
-1. **Interest Calculator Agent** ✅ - Calculates accrued interest on tax liens
-2. **Payment Processor Agent** - Handles lien redemption payments and updates
-3. **Lien Status Monitor Agent** - Tracks lien status changes and deadlines
-4. **Portfolio Analyzer Agent** - Provides portfolio-level insights and analytics
-5. **Risk Assessment Agent** - Evaluates lien risk factors and recommendations
-6. **Document Generator Agent** - Generates reports, statements, and legal documents
-7. **Notification Agent** - Sends alerts for deadlines, payments, and status changes
+### In Progress
+- [ ] MCP tool integrations (SendGrid, Twilio, Google Calendar)
+- [ ] State-specific interest calculation rules
+- [ ] PDF document generation (reportlab)
 
-## Usage Example
+### Planned
+- [ ] Frontend UI (React/Next.js)
+- [ ] User authentication (Firebase Auth)
+- [ ] Scheduled jobs (Cloud Scheduler)
+- [ ] Docker containerization
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Production deployment (Cloud Run)
+- [ ] Mobile app (React Native)
 
-```python
-import asyncio
-from core.storage import FirestoreClient
-from agents.interest_calculator.agent import InterestCalculatorAgent
-
-async def main():
-    # Initialize storage
-    storage = FirestoreClient(project_id="your-project-id")
-    
-    # Create agent
-    agent = InterestCalculatorAgent(storage=storage)
-    
-    # Run interest calculation
-    result = await agent.run(
-        tenant_id="tenant_123",
-        task="calculate_interest",
-        lien_ids=["lien_id_456"]
-    )
-    
-    print(f"Interest accrued: ${result['interest_accrued']:.2f}")
-
-asyncio.run(main())
-```
-
-## Testing
-
-Run the test script to verify the Interest Calculator Agent:
-
-```bash
-python test_interest_calculator.py
-```
-
-## Multi-Tenancy
-
-LienOS enforces strict tenant isolation at the storage layer. All data operations automatically filter by `tenant_id`, ensuring that tenants can only access their own data. This is enforced in:
-
-- Document creation
-- Document retrieval
-- Document updates
-- Query operations
+---
 
 ## Contributing
 
-Contributions are welcome! Please ensure:
+We welcome contributions! Here's how to get started:
 
-- Code follows PEP 8 style guidelines
-- All tests pass
-- New features include appropriate tests
-- Documentation is updated
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Run tests: `pytest tests/ -v`
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+### Code Style
+
+- Follow PEP 8 guidelines
+- Use type hints for all function signatures
+- Write docstrings for classes and public methods
+- Keep functions focused and under 50 lines
+
+---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Author
+---
 
-S.D. - 2024
+## Acknowledgments
+
+- Built with [Google Agent Development Kit (ADK)](https://github.com/google/adk-python)
+- Powered by [Gemini 2.0 Flash](https://deepmind.google/technologies/gemini/)
+- API framework: [FastAPI](https://fastapi.tiangolo.com/)
+
+---
+
+<p align="center">
+  <strong>LienOS</strong> — Intelligent Tax Lien Management
+</p>
