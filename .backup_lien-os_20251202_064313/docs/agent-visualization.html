@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LienOS - Multi-Agent Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        .demo-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .demo-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Workflow Status */
+        .workflow-status {
+            text-align: center;
+            margin: 30px 0;
+            min-height: 60px;
+        }
+
+        .status-text {
+            font-size: 1.2rem;
+            color: #60a5fa;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-text.visible {
+            opacity: 1;
+        }
+
+        .status-step {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.9rem;
+        }
+
+        /* Agent Grid */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        /* Agent Cards */
+        .agent-card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--agent-color);
+        }
+
+        .agent-card.active {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px var(--agent-glow);
+            border-color: var(--agent-color);
+        }
+
+        .agent-card.pulse {
+            animation: pulse 0.6s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .agent-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            background: var(--agent-color);
+            box-shadow: 0 4px 12px var(--agent-glow);
+        }
+
+        .agent-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+        }
+
+        .agent-description {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .capabilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .capability {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 4px;
+            color: #cbd5e1;
+        }
+
+        .agent-status {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #475569;
+        }
+
+        .agent-status.active {
+            background: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+            animation: statusPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Agent Colors */
+        .agent-card[data-type="crud"] {
+            --agent-color: #3b82f6;
+            --agent-glow: rgba(59, 130, 246, 0.3);
+        }
+
+        .agent-card[data-type="calculation"] {
+            --agent-color: #8b5cf6;
+            --agent-glow: rgba(139, 92, 246, 0.3);
+        }
+
+        .agent-card[data-type="monitoring"] {
+            --agent-color: #f59e0b;
+            --agent-glow: rgba(245, 158, 11, 0.3);
+        }
+
+        .agent-card[data-type="payment"] {
+            --agent-color: #10b981;
+            --agent-glow: rgba(16, 185, 129, 0.3);
+        }
+
+        .agent-card[data-type="communication"] {
+            --agent-color: #06b6d4;
+            --agent-glow: rgba(6, 182, 212, 0.3);
+        }
+
+        .agent-card[data-type="analytics"] {
+            --agent-color: #ec4899;
+            --agent-glow: rgba(236, 72, 153, 0.3);
+        }
+
+        .agent-card[data-type="document"] {
+            --agent-color: #f43f5e;
+            --agent-glow: rgba(244, 63, 94, 0.3);
+        }
+
+        /* Data Flow Lines */
+        .flow-container {
+            position: relative;
+            margin: 40px 0;
+        }
+
+        .flow-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Activity Log */
+        .activity-log {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #94a3b8;
+        }
+
+        .log-entry {
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 6px;
+            border-left: 3px solid var(--log-color, #475569);
+            opacity: 0;
+            transform: translateX(-10px);
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-time {
+            color: #64748b;
+            margin-right: 8px;
+        }
+
+        .log-agent {
+            color: var(--log-color);
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .tech-badge {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 6px;
+            color: #60a5fa;
+        }
+
+        .copyright {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2rem;
+            }
+
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">LienOS</h1>
+            <p class="tagline">AI-Powered Multi-Agent Tax Lien Management System</p>
+            <button class="demo-btn" id="demoBtn" onclick="startDemo()">
+                Start Demo Workflow
+            </button>
+        </header>
+
+        <!-- Workflow Status -->
+        <div class="workflow-status">
+            <div class="status-text" id="statusText"></div>
+        </div>
+
+        <!-- Agent Grid -->
+        <div class="agent-grid">
+            <!-- Lien Tracker Agent -->
+            <div class="agent-card" data-type="crud" id="agent-lien-tracker">
+                <div class="agent-status"></div>
+                <div class="agent-icon">📋</div>
+                <h3 class="agent-name">LienTrackerAgent</h3>
+                <p class="agent-description">Core CRUD operations for managing tax lien records with automatic deadline creation.</p>
+                <div class="capabilities">
+                    <span class="capability">create_lien</span>
+                    <span class="capability">update_lien</span>
+                    <span class="capability">list_liens</span>
+                    <span class="capability">delete_lien</span>
+                </div>
+            </div>
+
+            <!-- Interest Calculator Agent -->
+            <div class="agent-card" data-type="calculation" id="agent-interest-calc">
+                <div class="agent-status"></div>
+                <div class="agent-icon">📊</div>
+                <h3 class="agent-name">InterestCalculatorAgent</h3>
+                <p class="agent-description">Calculates accrued interest based on principal, rate, and time elapsed.</p>
+                <div class="capabilities">
+                    <span class="capability">calculate_interest</span>
+                    <span class="capability">total_owed</span>
+                    <span class="capability">days_elapsed</span>
+                </div>
+            </div>
+
+            <!-- Deadline Alert Agent -->
+            <div class="agent-card" data-type="monitoring" id="agent-deadline">
+                <div class="agent-status"></div>
+                <div class="agent-icon">⏰</div>
+                <h3 class="agent-name">DeadlineAlertAgent</h3>
+                <p class="agent-description">Monitors redemption deadlines and sends proactive alerts at key intervals.</p>
+                <div class="capabilities">
+                    <span class="capability">check_deadlines</span>
+                    <span class="capability">create_deadline</span>
+                    <span class="capability">send_alert</span>
+                </div>
+            </div>
+
+            <!-- Payment Monitor Agent -->
+            <div class="agent-card" data-type="payment" id="agent-payment">
+                <div class="agent-status"></div>
+                <div class="agent-icon">💰</div>
+                <h3 class="agent-name">PaymentMonitorAgent</h3>
+                <p class="agent-description">Records payments, detects full redemption, and updates lien status.</p>
+                <div class="capabilities">
+                    <span class="capability">record_payment</span>
+                    <span class="capability">verify_payment</span>
+                    <span class="capability">reconcile_lien</span>
+                </div>
+            </div>
+
+            <!-- Communication Agent -->
+            <div class="agent-card" data-type="communication" id="agent-comm">
+                <div class="agent-status"></div>
+                <div class="agent-icon">📧</div>
+                <h3 class="agent-name">CommunicationAgent</h3>
+                <p class="agent-description">Manages notifications, email queues, and SMS delivery channels.</p>
+                <div class="capabilities">
+                    <span class="capability">send_notification</span>
+                    <span class="capability">send_email</span>
+                    <span class="capability">send_sms</span>
+                </div>
+            </div>
+
+            <!-- Portfolio Dashboard Agent -->
+            <div class="agent-card" data-type="analytics" id="agent-portfolio">
+                <div class="agent-status"></div>
+                <div class="agent-icon">📈</div>
+                <h3 class="agent-name">PortfolioDashboardAgent</h3>
+                <p class="agent-description">Provides analytics, ROI calculations, and actionable recommendations.</p>
+                <div class="capabilities">
+                    <span class="capability">portfolio_summary</span>
+                    <span class="capability">performance_report</span>
+                    <span class="capability">health_score</span>
+                </div>
+            </div>
+
+            <!-- Document Generator Agent -->
+            <div class="agent-card" data-type="document" id="agent-document">
+                <div class="agent-status"></div>
+                <div class="agent-icon">📄</div>
+                <h3 class="agent-name">DocumentGeneratorAgent</h3>
+                <p class="agent-description">Generates redemption notices, receipts, reports, and tax forms.</p>
+                <div class="capabilities">
+                    <span class="capability">redemption_notice</span>
+                    <span class="capability">payment_receipt</span>
+                    <span class="capability">tax_form</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="activity-log">
+            <div class="log-title">Agent Activity Log</div>
+            <div id="logEntries">
+                <div class="log-entry" style="--log-color: #64748b; animation: none; opacity: 1; transform: none;">
+                    <span class="log-time">--:--:--</span>
+                    <span>Click "Start Demo" to see agents in action</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="tech-stack">
+                <span class="tech-badge">Google ADK</span>
+                <span class="tech-badge">Gemini 2.0</span>
+                <span class="tech-badge">FastAPI</span>
+                <span class="tech-badge">Firestore</span>
+                <span class="tech-badge">Python 3.11+</span>
+            </div>
+            <p class="copyright">LienOS - Intelligent Tax Lien Management</p>
+        </footer>
+    </div>
+
+    <script>
+        let isRunning = false;
+
+        const agents = {
+            'lien-tracker': { color: '#3b82f6', name: 'LienTracker' },
+            'interest-calc': { color: '#8b5cf6', name: 'InterestCalculator' },
+            'deadline': { color: '#f59e0b', name: 'DeadlineAlert' },
+            'payment': { color: '#10b981', name: 'PaymentMonitor' },
+            'comm': { color: '#06b6d4', name: 'Communication' },
+            'portfolio': { color: '#ec4899', name: 'PortfolioDashboard' },
+            'document': { color: '#f43f5e', name: 'DocumentGenerator' }
+        };
+
+        function getTime() {
+            return new Date().toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        function addLogEntry(agentKey, message) {
+            const logEntries = document.getElementById('logEntries');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.setProperty('--log-color', agents[agentKey].color);
+            entry.innerHTML = `
+                <span class="log-time">${getTime()}</span>
+                <span class="log-agent">${agents[agentKey].name}</span>: ${message}
+            `;
+            logEntries.insertBefore(entry, logEntries.firstChild);
+
+            // Keep only last 10 entries
+            while (logEntries.children.length > 10) {
+                logEntries.removeChild(logEntries.lastChild);
+            }
+        }
+
+        function activateAgent(agentKey) {
+            const card = document.getElementById(`agent-${agentKey}`);
+            const status = card.querySelector('.agent-status');
+
+            card.classList.add('active', 'pulse');
+            status.classList.add('active');
+
+            setTimeout(() => {
+                card.classList.remove('pulse');
+            }, 600);
+        }
+
+        function deactivateAgent(agentKey) {
+            const card = document.getElementById(`agent-${agentKey}`);
+            const status = card.querySelector('.agent-status');
+
+            card.classList.remove('active');
+            status.classList.remove('active');
+        }
+
+        function deactivateAllAgents() {
+            Object.keys(agents).forEach(key => deactivateAgent(key));
+        }
+
+        function setStatus(text) {
+            const statusEl = document.getElementById('statusText');
+            statusEl.textContent = text;
+            statusEl.classList.add('visible');
+        }
+
+        function clearStatus() {
+            const statusEl = document.getElementById('statusText');
+            statusEl.classList.remove('visible');
+        }
+
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startDemo() {
+            if (isRunning) return;
+            isRunning = true;
+
+            const btn = document.getElementById('demoBtn');
+            btn.disabled = true;
+            btn.textContent = 'Running Demo...';
+
+            // Clear previous state
+            deactivateAllAgents();
+            document.getElementById('logEntries').innerHTML = '';
+
+            // Demo workflow
+            const workflow = [
+                {
+                    agent: 'lien-tracker',
+                    status: 'Step 1: Creating new tax lien record',
+                    log: 'Creating lien #2024-001 for 123 Main St, Miami-Dade County'
+                },
+                {
+                    agent: 'lien-tracker',
+                    status: 'Step 1: Creating new tax lien record',
+                    log: 'Lien created: $5,000 @ 18% APR, redemption in 730 days'
+                },
+                {
+                    agent: 'deadline',
+                    status: 'Step 2: Setting up deadline monitoring',
+                    log: 'Creating redemption deadline for lien #2024-001'
+                },
+                {
+                    agent: 'deadline',
+                    status: 'Step 2: Setting up deadline monitoring',
+                    log: 'Alerts scheduled: 90, 60, 30, 14, 7, 3, 1 days before deadline'
+                },
+                {
+                    agent: 'interest-calc',
+                    status: 'Step 3: Calculating accrued interest',
+                    log: 'Calculating interest for lien #2024-001...'
+                },
+                {
+                    agent: 'interest-calc',
+                    status: 'Step 3: Calculating accrued interest',
+                    log: 'Result: 180 days elapsed, $443.84 interest, $5,443.84 total owed'
+                },
+                {
+                    agent: 'deadline',
+                    status: 'Step 4: Checking upcoming deadlines',
+                    log: 'Scanning all active liens for approaching deadlines...'
+                },
+                {
+                    agent: 'deadline',
+                    status: 'Step 4: Checking upcoming deadlines',
+                    log: 'Alert triggered: Lien #2024-001 has 60 days remaining!'
+                },
+                {
+                    agent: 'comm',
+                    status: 'Step 5: Sending deadline alert',
+                    log: 'Creating DEADLINE_APPROACHING notification'
+                },
+                {
+                    agent: 'comm',
+                    status: 'Step 5: Sending deadline alert',
+                    log: 'Email queued to investor@example.com'
+                },
+                {
+                    agent: 'payment',
+                    status: 'Step 6: Recording property owner payment',
+                    log: 'Payment received: $5,443.84 for lien #2024-001'
+                },
+                {
+                    agent: 'payment',
+                    status: 'Step 6: Recording property owner payment',
+                    log: 'Full redemption detected! Updating lien status to REDEEMED'
+                },
+                {
+                    agent: 'comm',
+                    status: 'Step 7: Sending payment notification',
+                    log: 'Creating PAYMENT_RECEIVED notification'
+                },
+                {
+                    agent: 'document',
+                    status: 'Step 8: Generating payment receipt',
+                    log: 'Generating payment receipt document...'
+                },
+                {
+                    agent: 'document',
+                    status: 'Step 8: Generating payment receipt',
+                    log: 'Receipt generated: doc_receipt_2024-001.html'
+                },
+                {
+                    agent: 'portfolio',
+                    status: 'Step 9: Updating portfolio analytics',
+                    log: 'Recalculating portfolio summary...'
+                },
+                {
+                    agent: 'portfolio',
+                    status: 'Step 9: Updating portfolio analytics',
+                    log: 'Portfolio updated: 1 lien redeemed, $443.84 profit, 8.9% ROI'
+                }
+            ];
+
+            for (const step of workflow) {
+                deactivateAllAgents();
+                activateAgent(step.agent);
+                setStatus(step.status);
+                addLogEntry(step.agent, step.log);
+                await sleep(1200);
+            }
+
+            // Final state
+            await sleep(500);
+            deactivateAllAgents();
+            setStatus('Demo Complete! All agents successfully processed the tax lien lifecycle.');
+
+            // Briefly light up all agents
+            Object.keys(agents).forEach(key => activateAgent(key));
+            await sleep(2000);
+            deactivateAllAgents();
+            clearStatus();
+
+            btn.disabled = false;
+            btn.textContent = 'Start Demo Workflow';
+            isRunning = false;
+        }
+    </script>
+</body>
+</html>

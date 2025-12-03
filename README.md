@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Status](https://img.shields.io/badge/Status-In%20Development-yellow.svg)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-green.svg)
 
 **AI-Powered Tax Lien Portfolio Management System**
 
@@ -39,6 +39,10 @@ LienOS uses a **multi-agent architecture** powered by Google's Agent Development
 | **PortfolioDashboardAgent** | Analytics, performance metrics, recommendations |
 | **DocumentGeneratorAgent** | Generate notices, receipts, reports, tax forms |
 
+### Root Orchestrator Agent
+
+The `root_agent` in `agents/agent.py` orchestrates all 7 specialized agents, providing a unified conversational interface powered by Gemini 2.0 Flash. Users can interact naturally with the system, and the orchestrator routes requests to the appropriate specialized agent.
+
 ### Tech Stack
 
 - **AI Framework:** Google ADK + Gemini 2.0 Flash
@@ -46,6 +50,9 @@ LienOS uses a **multi-agent architecture** powered by Google's Agent Development
 - **Database:** Google Firestore (with local dev mode)
 - **Validation:** Pydantic v2
 - **Testing:** Pytest + pytest-asyncio
+- **Deployment:** Cloud Run, Docker, Terraform
+- **CI/CD:** Google Cloud Build
+- **Observability:** OpenTelemetry, Cloud Trace, Cloud Logging
 
 ### Design Principles
 
@@ -53,6 +60,7 @@ LienOS uses a **multi-agent architecture** powered by Google's Agent Development
 - **Agent-first:** Business logic lives in specialized agents
 - **Async throughout:** Non-blocking operations for scale
 - **Local-first development:** Works without cloud credentials
+- **Production-ready:** Containerized, observable, auto-scaling
 
 ---
 
@@ -60,8 +68,10 @@ LienOS uses a **multi-agent architecture** powered by Google's Agent Development
 
 ### Prerequisites
 
-- Python 3.11+
-- pip
+- **Python 3.11+**
+- **uv**: Python package manager - [Install](https://docs.astral.sh/uv/getting-started/installation/)
+- **Google Cloud SDK** (for deployment): [Install](https://cloud.google.com/sdk/docs/install)
+- **make**: Build automation tool (pre-installed on Unix systems)
 
 ### Installation
 
@@ -70,44 +80,48 @@ LienOS uses a **multi-agent architecture** powered by Google's Agent Development
 git clone https://github.com/3piecechickendinner/LienOS.git
 cd lien-os
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Install dependencies
-pip install -r requirements.txt
+make install
 ```
 
-### Run the API
+### Local Development
+
+#### Option 1: Run ADK Playground (Recommended for Testing)
 
 ```bash
-# Start the development server
-uvicorn api.main:app --reload --port 8000
+# Launch interactive playground with UI
+make playground
+```
+
+This starts the ADK web interface where you can chat with the LienOS orchestrator agent and test all capabilities.
+
+#### Option 2: Run REST API
+
+```bash
+# Start the FastAPI development server
+make local-backend
 ```
 
 The API will be available at `http://localhost:8000`
+
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
 
 ### Run Tests
 
 ```bash
 # Run all tests
-pytest tests/ -v
+make test
 
-# Run specific test file
-pytest tests/test_agents.py -v
-
-# Run with coverage
-pytest tests/ --cov=.
+# Run code quality checks
+make lint
 ```
 
 ---
 
 ## API Documentation
 
-Interactive API documentation is available when the server is running:
-
-- **Swagger UI:** http://localhost:8000/docs
-- **ReDoc:** http://localhost:8000/redoc
+Interactive API documentation is available when the server is running at http://localhost:8000/docs
 
 ### Example API Calls
 
@@ -150,165 +164,380 @@ curl -X POST http://localhost:8000/api/documents/redemption-notice \
   -d '{"lien_id": "lien_2024-001_20240115120000"}'
 ```
 
-**Check Deadlines:**
+---
+
+## Production Deployment
+
+LienOS is production-ready with automated deployment to Google Cloud Run.
+
+### Deployment Commands
+
+| Command | Description |
+|---------|-------------|
+| `make install` | Install dependencies using uv |
+| `make playground` | Launch ADK playground for agent testing |
+| `make local-backend` | Run FastAPI server locally |
+| `make deploy` | Deploy to Cloud Run (dev environment) |
+| `make test` | Run unit and integration tests |
+| `make lint` | Run code quality checks |
+| `make setup-dev-env` | Set up infrastructure with Terraform |
+
+### Deploy to Cloud Run
+
+#### Quick Deploy (Dev Environment)
+
 ```bash
-curl -X POST http://localhost:8000/api/deadlines/check \
-  -H "X-Tenant-ID: my-tenant-id"
+# Set your Google Cloud project
+gcloud config set project YOUR-PROJECT-ID
+
+# Deploy directly to Cloud Run
+make deploy
 ```
 
+This will:
+1. Build a Docker container
+2. Push to Google Artifact Registry
+3. Deploy to Cloud Run in us-central1
+4. Enable authentication (--no-allow-unauthenticated)
+5. Allocate 4GB memory with no CPU throttling
+
+#### Advanced Deploy Options
+
+```bash
+# Deploy with Identity-Aware Proxy (IAP)
+make deploy IAP=true
+
+# Deploy with custom port
+make deploy PORT=8080
+```
+
+### CI/CD Pipeline
+
+LienOS includes Google Cloud Build pipelines for automated deployment:
+
+#### Staging Pipeline (`.cloudbuild/staging.yaml`)
+- Triggered on pull requests or pushes to `staging` branch
+- Builds and deploys to staging environment
+- Runs load tests with Locust
+- Auto-triggers production deployment on success
+
+#### Production Pipeline (`.cloudbuild/deploy-to-prod.yaml`)
+- Triggered manually or by staging pipeline
+- Deploys to production with approval gates
+- Includes rollback capabilities
+
+#### PR Checks (`.cloudbuild/pr_checks.yaml`)
+- Runs on all pull requests
+- Executes linting, testing, and security checks
+- Blocks merge if checks fail
+
+### Set Up CI/CD
+
+For a streamlined one-command setup:
+
+```bash
+uvx agent-starter-pack setup-cicd
+```
+
+This automates:
+- Cloud Build trigger creation
+- IAM permission setup
+- Artifact Registry configuration
+- Environment variable configuration
+
+### Infrastructure as Code
+
+Infrastructure is managed with Terraform in `deployment/terraform/`:
+
+```bash
+# Initialize and deploy development infrastructure
+make setup-dev-env
+```
+
+This creates:
+- Cloud Run service
+- Artifact Registry repository
+- GCS buckets for logs and artifacts
+- IAM roles and permissions
+- Firestore database
+- Cloud Logging configuration
+
+See [deployment/README.md](deployment/README.md) for detailed Terraform documentation.
+
 ---
 
-## Agent Details
-
-### LienTrackerAgent
-The core CRUD agent for managing tax lien records. Handles creation, retrieval, updates, listing with filters, and soft/hard deletion. Automatically creates associated deadlines when liens are added.
-
-### InterestCalculatorAgent
-Calculates accrued interest based on purchase amount, interest rate, and days elapsed. Supports simple interest calculation with plans for state-specific compound interest rules.
-
-### DeadlineAlertAgent
-Monitors redemption deadlines and sends alerts at configured intervals (default: 90, 60, 30, 14, 7, 3, 1 days before). Creates notifications that can be delivered via email, SMS, or in-app.
-
-### PaymentMonitorAgent
-Records payments against liens, calculates remaining balance, and automatically marks liens as REDEEMED when fully paid. Creates payment notifications and supports payment verification and reconciliation.
-
-### CommunicationAgent
-Manages the notification system including in-app alerts, email queue, and SMS queue. Handles marking notifications as read and provides filtering by type, priority, and read status.
-
-### PortfolioDashboardAgent
-Provides comprehensive portfolio analytics including total invested, interest earned, ROI calculations, and breakdowns by status/county. Generates actionable recommendations and calculates a portfolio health score.
-
-### DocumentGeneratorAgent
-Generates HTML documents including redemption notices, portfolio reports, payment receipts, and 1099-INT style tax summaries. Documents include proper formatting and can be extended to PDF generation.
-
----
-
-## Development
-
-### Local vs Production Mode
-
-LienOS automatically detects its environment:
-
-**Local Development (default):**
-- Uses in-memory storage (data resets on restart)
-- No Google Cloud credentials needed
-- Set `GOOGLE_PROJECT_ID=local-dev` or leave unset
-
-**Production:**
-- Uses Google Firestore
-- Requires `GOOGLE_APPLICATION_CREDENTIALS`
-- Set `GOOGLE_PROJECT_ID` to your GCP project
+## Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file based on `.env.example`:
 
-```env
-# Required for production
-GOOGLE_PROJECT_ID=your-gcp-project-id
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-
-# Optional
-LOG_LEVEL=INFO
+```bash
+cp .env.example .env
 ```
 
-### Project Structure
-
-```
-lien-os/
-├── api/
-│   └── main.py              # FastAPI application
-├── agents/
-│   ├── interest_calculator/ # Interest calculation agent
-│   ├── deadline_alert/      # Deadline monitoring agent
-│   ├── payment_monitor/     # Payment processing agent
-│   ├── lien_tracker/        # Lien CRUD agent
-│   ├── communication/       # Notification agent
-│   ├── portfolio_dashboard/ # Analytics agent
-│   └── document_generator/  # Document generation agent
-├── core/
-│   ├── base_agent.py        # Base agent class
-│   ├── data_models.py       # Pydantic models
-│   └── storage.py           # Storage abstraction
-├── tests/
-│   ├── conftest.py          # Pytest fixtures
-│   ├── test_agents.py       # Agent unit tests
-│   └── test_api.py          # API integration tests
-├── requirements.txt
-└── README.md
+**Required for Production:**
+```bash
+GOOGLE_PROJECT_ID=your-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
+LOGS_BUCKET_NAME=your-logs-bucket
 ```
 
-### Testing Guidelines
+**Optional:**
+```bash
+# Telemetry
+OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT
 
-- All tests use local storage mode (no cloud dependencies)
-- Use `pytest-asyncio` for async test functions
-- Create fixtures in `conftest.py` for reusable test data
-- Aim for >80% code coverage
-- Run tests before committing: `pytest tests/ -v`
+# CORS (for frontend)
+ALLOW_ORIGINS=https://yourfrontend.com,https://app.yourfrontend.com
+
+# Commit tracking
+COMMIT_SHA=<auto-set-by-ci-cd>
+AGENT_VERSION=<auto-set-by-ci-cd>
+```
+
+### Local Development (No Cloud Required)
+
+LienOS works fully offline for development:
+
+```bash
+# Set local mode
+export GOOGLE_PROJECT_ID=local-dev
+
+# Run locally
+make local-backend
+```
+
+In local mode:
+- Firestore uses in-memory mock storage
+- No Google Cloud credentials needed
+- Perfect for testing and development
 
 ---
 
-## Roadmap
+## Monitoring and Observability
 
-### Completed
-- [x] Core infrastructure (storage, base agent, data models)
-- [x] 7 AI agents with full capabilities
-- [x] FastAPI REST API with 25+ endpoints
-- [x] Comprehensive test suite (60+ tests)
-- [x] Local development mode (no cloud needed)
-- [x] Multi-tenant security enforcement
+LienOS includes production-grade observability:
 
-### In Progress
-- [ ] MCP tool integrations (SendGrid, Twilio, Google Calendar)
-- [ ] State-specific interest calculation rules
-- [ ] PDF document generation (reportlab)
+### 1. Agent Telemetry (Always Enabled)
+- **OpenTelemetry traces** exported to Cloud Trace
+- Tracks agent execution, latency, and system metrics
+- No PII or prompt content logged
 
-### Planned
-- [ ] Frontend UI (React/Next.js)
-- [ ] User authentication (Firebase Auth)
-- [ ] Scheduled jobs (Cloud Scheduler)
-- [ ] Docker containerization
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Production deployment (Cloud Run)
-- [ ] Mobile app (React Native)
+### 2. Prompt-Response Logging (Production Only)
+- Metadata-only logging to GCS and BigQuery
+- Enabled when `LOGS_BUCKET_NAME` is set
+- Helps with debugging and performance analysis
+- **Local development:** Disabled by default
+
+### View Telemetry
+
+```bash
+# Cloud Trace
+https://console.cloud.google.com/traces
+
+# Cloud Logging
+https://console.cloud.google.com/logs
+
+# GCS telemetry data
+gs://YOUR-LOGS-BUCKET/completions/
+```
+
+---
+
+## Project Structure
+
+```
+lien-os/
+├── agents/                     # AI agents and orchestrator
+│   ├── agent.py               # Root orchestrator agent
+│   ├── interest_calculator/   # Interest calculation agent
+│   ├── deadline_alert/        # Deadline monitoring agent
+│   ├── payment_monitor/       # Payment tracking agent
+│   ├── lien_tracker/          # Lien CRUD agent
+│   ├── communication/         # Notification agent
+│   ├── portfolio_dashboard/   # Analytics agent
+│   ├── document_generator/    # Document generation agent
+│   └── app_utils/             # Telemetry and utilities
+├── api/                       # FastAPI REST API
+│   └── main.py               # API endpoints
+├── core/                      # Core business logic
+│   └── storage.py            # Firestore client
+├── .cloudbuild/              # CI/CD pipeline configs
+│   ├── staging.yaml          # Staging deployment
+│   ├── deploy-to-prod.yaml   # Production deployment
+│   └── pr_checks.yaml        # Pull request checks
+├── deployment/               # Infrastructure & deployment
+│   ├── terraform/            # Terraform IaC
+│   └── README.md             # Deployment guide
+├── tests/                    # Unit and integration tests
+├── Dockerfile                # Container configuration
+├── Makefile                  # Development commands
+├── pyproject.toml            # Python dependencies
+└── README.md                 # This file
+```
+
+---
+
+## Development Workflow
+
+### 1. Local Development
+```bash
+# Install dependencies
+make install
+
+# Run API
+make local-backend
+
+# Or test in playground
+make playground
+
+# Run tests
+make test
+```
+
+### 2. Make Changes
+- Edit agent code in `agents/`
+- Update API endpoints in `api/main.py`
+- Add tests in `tests/`
+
+### 3. Test & Lint
+```bash
+make test
+make lint
+```
+
+### 4. Deploy to Dev
+```bash
+make deploy
+```
+
+### 5. Create Pull Request
+- CI automatically runs `pr_checks.yaml`
+- Linting, testing, and security checks
+- Manual code review
+
+### 6. Merge to Staging
+- Auto-deploys via `staging.yaml`
+- Load testing runs automatically
+- On success, triggers production deployment
+
+### 7. Production Deployment
+- Manual approval gate
+- Deployed via `deploy-to-prod.yaml`
+- Rollback available if needed
+
+---
+
+## Common Tasks
+
+### Add a New Agent
+
+1. Create new directory in `agents/new_agent/`
+2. Implement `NewAgent` class with `run()` method
+3. Add tool function in `agents/agent.py`
+4. Register tool with `root_agent`
+5. Add API endpoint in `api/main.py`
+6. Write tests in `tests/`
+
+### Update Dependencies
+
+```bash
+# Add new package
+uv add package-name
+
+# Add dev dependency
+uv add --dev package-name
+
+# Update all packages
+uv sync
+
+# Lock dependencies
+uv lock
+```
+
+### View Logs
+
+```bash
+# Local logs
+tail -f *.log
+
+# Cloud Run logs
+gcloud logging read "resource.type=cloud_run_revision" \
+  --project YOUR-PROJECT-ID \
+  --limit 50
+```
+
+---
+
+## Troubleshooting
+
+### "Authentication failed" during deployment
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+### "API not enabled" errors
+```bash
+gcloud services enable run.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+```
+
+### Local development not working
+```bash
+# Ensure you're using local mode
+export GOOGLE_PROJECT_ID=local-dev
+
+# Reinstall dependencies
+rm -rf .venv
+make install
+```
+
+### Docker build fails
+```bash
+# Ensure Docker is running
+docker info
+
+# Clear Docker cache
+docker system prune -a
+```
 
 ---
 
 ## Contributing
 
-We welcome contributions! Here's how to get started:
+Contributions welcome! Please:
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes
-4. Run tests: `pytest tests/ -v`
-5. Commit: `git commit -m 'Add amazing feature'`
-6. Push: `git push origin feature/amazing-feature`
-7. Open a Pull Request
-
-### Code Style
-
-- Follow PEP 8 guidelines
-- Use type hints for all function signatures
-- Write docstrings for classes and public methods
-- Keep functions focused and under 50 lines
+2. Create a feature branch
+3. Make changes with tests
+4. Run `make lint` and `make test`
+5. Submit pull request
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details
+
+---
+
+## Support
+
+- **Issues:** [GitHub Issues](https://github.com/3piecechickendinner/LienOS/issues)
+- **Documentation:** [Full docs](https://github.com/3piecechickendinner/LienOS/wiki)
+- **Email:** sdhines3@gmail.com
 
 ---
 
 ## Acknowledgments
 
-- Built with [Google Agent Development Kit (ADK)](https://github.com/google/adk-python)
-- Powered by [Gemini 2.0 Flash](https://deepmind.google/technologies/gemini/)
-- API framework: [FastAPI](https://fastapi.tiangolo.com/)
+Built with:
+- [Google Agent Development Kit (ADK)](https://github.com/google/adk)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Google Cloud Platform](https://cloud.google.com/)
+- [Google Gemini AI](https://deepmind.google/technologies/gemini/)
 
----
-
-<p align="center">
-  <strong>LienOS</strong> — Intelligent Tax Lien Management
-</p>
+**Powered by the Google Cloud Agent Starter Pack** - Production-ready deployment infrastructure for AI agents.

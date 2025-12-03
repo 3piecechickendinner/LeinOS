@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LienOS - Multi-Agent Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(180deg, #0c1222 0%, #1a2744 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            padding: 30px 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #94a3b8;
+        }
+
+        /* Architecture Container */
+        .architecture {
+            position: relative;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        /* Layer Styles */
+        .layer {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .layer:last-child {
+            margin-bottom: 0;
+        }
+
+        .layer-label {
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .layer-content {
+            margin-left: 30px;
+        }
+
+        /* API Layer */
+        .api-layer {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .api-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .endpoints {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .endpoint {
+            font-size: 0.7rem;
+            padding: 6px 10px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 6px;
+            color: #93c5fd;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        /* Connector Lines */
+        .connectors {
+            height: 40px;
+            position: relative;
+            margin: 10px 0;
+        }
+
+        .connector-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .connector-line {
+            stroke: #3b82f6;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 8 4;
+            animation: flowDown 1s linear infinite;
+        }
+
+        @keyframes flowDown {
+            from { stroke-dashoffset: 12; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Agent Layer */
+        .agent-layer {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .agent-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .agent-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .agent-node {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            border: 2px solid var(--agent-color);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .agent-node:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px var(--agent-glow);
+        }
+
+        .agent-node::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 4px;
+            background: var(--agent-color);
+            border-radius: 0 0 4px 4px;
+        }
+
+        .agent-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .agent-name {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            line-height: 1.3;
+        }
+
+        .agent-type {
+            font-size: 0.55rem;
+            color: var(--agent-color);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Agent Colors */
+        .agent-node[data-type="crud"] {
+            --agent-color: #3b82f6;
+            --agent-glow: rgba(59, 130, 246, 0.4);
+        }
+
+        .agent-node[data-type="calculation"] {
+            --agent-color: #8b5cf6;
+            --agent-glow: rgba(139, 92, 246, 0.4);
+        }
+
+        .agent-node[data-type="monitoring"] {
+            --agent-color: #f59e0b;
+            --agent-glow: rgba(245, 158, 11, 0.4);
+        }
+
+        .agent-node[data-type="payment"] {
+            --agent-color: #10b981;
+            --agent-glow: rgba(16, 185, 129, 0.4);
+        }
+
+        .agent-node[data-type="communication"] {
+            --agent-color: #06b6d4;
+            --agent-glow: rgba(6, 182, 212, 0.4);
+        }
+
+        .agent-node[data-type="analytics"] {
+            --agent-color: #ec4899;
+            --agent-glow: rgba(236, 72, 153, 0.4);
+        }
+
+        .agent-node[data-type="document"] {
+            --agent-color: #f43f5e;
+            --agent-glow: rgba(244, 63, 94, 0.4);
+        }
+
+        /* Data Layer */
+        .data-layer {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .data-stores {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .data-store {
+            text-align: center;
+            padding: 16px 24px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .store-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .store-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .store-desc {
+            font-size: 0.65rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Data Flow Diagram */
+        .flow-diagram {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .flow-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .flow-svg {
+            width: 100%;
+            height: 120px;
+        }
+
+        .flow-node {
+            fill: rgba(30, 41, 59, 0.8);
+            stroke-width: 2;
+        }
+
+        .flow-text {
+            fill: #e2e8f0;
+            font-size: 10px;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .flow-arrow {
+            fill: none;
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
+        }
+
+        .flow-arrow.animated {
+            stroke-dasharray: 6 3;
+            animation: flowRight 0.8s linear infinite;
+        }
+
+        @keyframes flowRight {
+            from { stroke-dashoffset: 9; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .tech-badge {
+            font-size: 0.7rem;
+            padding: 6px 12px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            color: #60a5fa;
+        }
+
+        .copyright {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Animation for connection flow */
+        .pulse-connection {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">LienOS Architecture</h1>
+            <p class="subtitle">Multi-Agent System Design</p>
+        </header>
+
+        <!-- Architecture Diagram -->
+        <div class="architecture">
+            <!-- API Layer -->
+            <div class="layer">
+                <span class="layer-label">Interface</span>
+                <div class="layer-content">
+                    <div class="api-layer">
+                        <div class="api-title">
+                            <span>⚡</span> FastAPI REST Endpoints
+                        </div>
+                        <div class="endpoints">
+                            <span class="endpoint">POST /api/liens</span>
+                            <span class="endpoint">POST /api/interest/calculate</span>
+                            <span class="endpoint">POST /api/payments/record</span>
+                            <span class="endpoint">POST /api/deadlines/check</span>
+                            <span class="endpoint">GET /api/notifications</span>
+                            <span class="endpoint">POST /api/portfolio/summary</span>
+                            <span class="endpoint">POST /api/documents/generate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connector -->
+            <div class="connectors">
+                <svg class="connector-svg" viewBox="0 0 100 40" preserveAspectRatio="none">
+                    <path class="connector-line" d="M 50 0 L 50 40"/>
+                </svg>
+            </div>
+
+            <!-- Agent Layer -->
+            <div class="layer">
+                <span class="layer-label">Agents</span>
+                <div class="layer-content">
+                    <div class="agent-layer">
+                        <div class="agent-grid">
+                            <div class="agent-node" data-type="crud">
+                                <div class="agent-icon">📋</div>
+                                <div class="agent-name">Lien<br>Tracker</div>
+                                <div class="agent-type">CRUD</div>
+                            </div>
+                            <div class="agent-node" data-type="calculation">
+                                <div class="agent-icon">📊</div>
+                                <div class="agent-name">Interest<br>Calculator</div>
+                                <div class="agent-type">Calc</div>
+                            </div>
+                            <div class="agent-node" data-type="monitoring">
+                                <div class="agent-icon">⏰</div>
+                                <div class="agent-name">Deadline<br>Alert</div>
+                                <div class="agent-type">Monitor</div>
+                            </div>
+                            <div class="agent-node" data-type="payment">
+                                <div class="agent-icon">💰</div>
+                                <div class="agent-name">Payment<br>Monitor</div>
+                                <div class="agent-type">Payment</div>
+                            </div>
+                            <div class="agent-node" data-type="communication">
+                                <div class="agent-icon">📧</div>
+                                <div class="agent-name">Communi-<br>cation</div>
+                                <div class="agent-type">Notify</div>
+                            </div>
+                            <div class="agent-node" data-type="analytics">
+                                <div class="agent-icon">📈</div>
+                                <div class="agent-name">Portfolio<br>Dashboard</div>
+                                <div class="agent-type">Analytics</div>
+                            </div>
+                            <div class="agent-node" data-type="document">
+                                <div class="agent-icon">📄</div>
+                                <div class="agent-name">Document<br>Generator</div>
+                                <div class="agent-type">Docs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connector -->
+            <div class="connectors">
+                <svg class="connector-svg" viewBox="0 0 100 40" preserveAspectRatio="none">
+                    <path class="connector-line" d="M 50 0 L 50 40"/>
+                </svg>
+            </div>
+
+            <!-- Data Layer -->
+            <div class="layer">
+                <span class="layer-label">Storage</span>
+                <div class="layer-content">
+                    <div class="data-layer">
+                        <div class="data-stores">
+                            <div class="data-store">
+                                <div class="store-icon">🔥</div>
+                                <div class="store-name">Firestore</div>
+                                <div class="store-desc">Liens, Payments, Notifications</div>
+                            </div>
+                            <div class="data-store">
+                                <div class="store-icon">📁</div>
+                                <div class="store-name">Cloud Storage</div>
+                                <div class="store-desc">Documents, Reports</div>
+                            </div>
+                            <div class="data-store">
+                                <div class="store-icon">🤖</div>
+                                <div class="store-name">Gemini 2.0</div>
+                                <div class="store-desc">AI Reasoning Engine</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Flow Diagram -->
+        <div class="flow-diagram">
+            <div class="flow-title">Example Data Flow: New Lien → Redemption</div>
+            <svg class="flow-svg" viewBox="0 0 900 120">
+                <!-- Arrow marker -->
+                <defs>
+                    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#60a5fa"/>
+                    </marker>
+                </defs>
+
+                <!-- Nodes -->
+                <rect class="flow-node" x="10" y="40" width="100" height="40" rx="8" stroke="#3b82f6"/>
+                <text class="flow-text" x="60" y="60">Create Lien</text>
+
+                <rect class="flow-node" x="150" y="40" width="100" height="40" rx="8" stroke="#8b5cf6"/>
+                <text class="flow-text" x="200" y="60">Calc Interest</text>
+
+                <rect class="flow-node" x="290" y="40" width="100" height="40" rx="8" stroke="#f59e0b"/>
+                <text class="flow-text" x="340" y="60">Check Deadline</text>
+
+                <rect class="flow-node" x="430" y="40" width="100" height="40" rx="8" stroke="#06b6d4"/>
+                <text class="flow-text" x="480" y="60">Send Alert</text>
+
+                <rect class="flow-node" x="570" y="40" width="100" height="40" rx="8" stroke="#10b981"/>
+                <text class="flow-text" x="620" y="60">Record Payment</text>
+
+                <rect class="flow-node" x="710" y="40" width="100" height="40" rx="8" stroke="#ec4899"/>
+                <text class="flow-text" x="760" y="60">Update Portfolio</text>
+
+                <rect class="flow-node" x="850" y="40" width="40" height="40" rx="8" stroke="#22c55e"/>
+                <text class="flow-text" x="870" y="60">✓</text>
+
+                <!-- Arrows -->
+                <path class="flow-arrow animated" d="M 110 60 L 145 60" stroke="#3b82f6"/>
+                <path class="flow-arrow animated" d="M 250 60 L 285 60" stroke="#8b5cf6"/>
+                <path class="flow-arrow animated" d="M 390 60 L 425 60" stroke="#f59e0b"/>
+                <path class="flow-arrow animated" d="M 530 60 L 565 60" stroke="#06b6d4"/>
+                <path class="flow-arrow animated" d="M 670 60 L 705 60" stroke="#10b981"/>
+                <path class="flow-arrow animated" d="M 810 60 L 845 60" stroke="#ec4899"/>
+            </svg>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3b82f6;"></div>
+                <span>CRUD Operations</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #8b5cf6;"></div>
+                <span>Calculations</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f59e0b;"></div>
+                <span>Monitoring</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10b981;"></div>
+                <span>Payments</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #06b6d4;"></div>
+                <span>Communication</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ec4899;"></div>
+                <span>Analytics</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f43f5e;"></div>
+                <span>Documents</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="tech-stack">
+                <span class="tech-badge">Python 3.11+</span>
+                <span class="tech-badge">Google ADK</span>
+                <span class="tech-badge">Gemini 2.0 Flash</span>
+                <span class="tech-badge">FastAPI</span>
+                <span class="tech-badge">Firestore</span>
+                <span class="tech-badge">Pydantic v2</span>
+            </div>
+            <p class="copyright">LienOS - Intelligent Tax Lien Management</p>
+        </footer>
+    </div>
+</body>
+</html>
