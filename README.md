@@ -3,10 +3,21 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-green.svg)
+![Deployment](https://img.shields.io/badge/Deployed-Google%20Cloud%20Run-4285F4.svg)
 
 **AI-Powered Tax Lien Portfolio Management System**
 
 LienOS is an intelligent multi-agent system that automates tax lien investment operations. Unlike passive tracking tools, LienOS employs proactive AI agents that monitor deadlines, calculate interest, process payments, and generate documents—all without manual intervention.
+
+## 🚀 Live Production API
+
+**Production API:** https://lien-os-402756129398.us-central1.run.app
+
+- **Swagger Docs:** https://lien-os-402756129398.us-central1.run.app/docs
+- **ReDoc:** https://lien-os-402756129398.us-central1.run.app/redoc
+- **Health Check:** https://lien-os-402756129398.us-central1.run.app/health
+
+The API is deployed on **Google Cloud Run** with auto-scaling, high availability, and production-grade observability.
 
 ## Why LienOS?
 
@@ -121,12 +132,30 @@ make lint
 
 ## API Documentation
 
-Interactive API documentation is available when the server is running at http://localhost:8000/docs
+Interactive API documentation is available:
+- **Production:** https://lien-os-402756129398.us-central1.run.app/docs
+- **Local:** http://localhost:8000/docs
 
 ### Example API Calls
 
 **Create a Lien:**
 ```bash
+# Production
+curl -X POST https://lien-os-402756129398.us-central1.run.app/api/liens \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: my-tenant-id" \
+  -d '{
+    "certificate_number": "2024-001",
+    "purchase_amount": 5000,
+    "interest_rate": 18,
+    "sale_date": "2024-01-15",
+    "redemption_deadline": "2026-01-15",
+    "county": "Miami-Dade",
+    "property_address": "123 Main St, Miami, FL 33101",
+    "parcel_id": "12-34-56-789"
+  }'
+
+# Local
 curl -X POST http://localhost:8000/api/liens \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: my-tenant-id" \

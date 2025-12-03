@@ -18,12 +18,16 @@ from typing import Optional
 import google.auth
 from google.adk.agents import Agent
 from google.adk.apps.app import App
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure Google Cloud settings
 try:
     _, project_id = google.auth.default()
 except Exception:
-    # Fallback for local development
+    # Fallback for local development - check .env first
     project_id = os.getenv("GOOGLE_PROJECT_ID", "local-dev")
 
 os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
@@ -40,8 +44,220 @@ from agents.portfolio_dashboard.agent import PortfolioDashboardAgent
 from agents.document_generator.agent import DocumentGeneratorAgent
 from core.storage import FirestoreClient
 
-# Initialize storage
-storage = FirestoreClient(project_id=project_id)
+# Storage will be initialized lazily
+_storage = None
+_mock_data_loaded = False
+
+
+def _load_mock_data(storage: FirestoreClient) -> None:
+    """
+    Load mock lien data into LocalStorageClient for testing.
+
+    Creates 12 sample tax liens with realistic data from Florida counties.
+    Only runs when using local-dev mode (LocalStorageClient).
+    """
+    global _mock_data_loaded
+
+    # Only load once and only for local storage
+    if _mock_data_loaded or not storage._use_local:
+        return
+
+    from decimal import Decimal
+    from datetime import date, datetime
+
+    # 12 mock liens matching the frontend's mock data
+    mock_liens = [
+        {
+            "lien_id": "lien-001",
+            "tenant_id": "system",
+            "certificate_number": "MD-2024-0847",
+            "purchase_amount": Decimal("8500"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 5, 15),
+            "redemption_deadline": date(2026, 5, 15),
+            "status": "ACTIVE",
+            "county": "Miami-Dade",
+            "property_address": "123 Main St, Miami, FL 33130",
+            "parcel_id": "01-3245-067-0890",
+        },
+        {
+            "lien_id": "lien-002",
+            "tenant_id": "system",
+            "certificate_number": "BR-2024-1234",
+            "purchase_amount": Decimal("12000"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 3, 22),
+            "redemption_deadline": date(2026, 3, 22),
+            "status": "ACTIVE",
+            "county": "Broward",
+            "property_address": "456 Oak Ave, Fort Lauderdale, FL 33301",
+            "parcel_id": "50-42-04-12-0010",
+        },
+        {
+            "lien_id": "lien-003",
+            "tenant_id": "system",
+            "certificate_number": "PB-2024-0567",
+            "purchase_amount": Decimal("5200"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 6, 10),
+            "redemption_deadline": date(2026, 6, 10),
+            "status": "ACTIVE",
+            "county": "Palm Beach",
+            "property_address": "789 Palm Dr, West Palm Beach, FL 33401",
+            "parcel_id": "74-43-44-21-05-000",
+        },
+        {
+            "lien_id": "lien-004",
+            "tenant_id": "system",
+            "certificate_number": "MD-2024-0923",
+            "purchase_amount": Decimal("15000"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 4, 8),
+            "redemption_deadline": date(2026, 4, 8),
+            "status": "ACTIVE",
+            "county": "Miami-Dade",
+            "property_address": "321 Coral Way, Miami, FL 33145",
+            "parcel_id": "01-4156-023-0450",
+        },
+        {
+            "lien_id": "lien-005",
+            "tenant_id": "system",
+            "certificate_number": "BR-2023-4521",
+            "purchase_amount": Decimal("7800"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2023, 11, 20),
+            "redemption_deadline": date(2025, 11, 20),
+            "status": "REDEEMED",
+            "county": "Broward",
+            "property_address": "567 Sunrise Blvd, Plantation, FL 33317",
+            "parcel_id": "50-41-17-01-0230",
+        },
+        {
+            "lien_id": "lien-006",
+            "tenant_id": "system",
+            "certificate_number": "PB-2024-0789",
+            "purchase_amount": Decimal("9500"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 2, 14),
+            "redemption_deadline": date(2026, 2, 14),
+            "status": "ACTIVE",
+            "county": "Palm Beach",
+            "property_address": "890 Ocean Blvd, Boca Raton, FL 33432",
+            "parcel_id": "06-43-47-27-01-000",
+        },
+        {
+            "lien_id": "lien-007",
+            "tenant_id": "system",
+            "certificate_number": "MD-2024-1156",
+            "purchase_amount": Decimal("4200"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 7, 3),
+            "redemption_deadline": date(2026, 7, 3),
+            "status": "ACTIVE",
+            "county": "Miami-Dade",
+            "property_address": "234 Biscayne Dr, Miami Beach, FL 33139",
+            "parcel_id": "02-3241-008-0120",
+        },
+        {
+            "lien_id": "lien-008",
+            "tenant_id": "system",
+            "certificate_number": "BR-2024-2345",
+            "purchase_amount": Decimal("6300"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 1, 25),
+            "redemption_deadline": date(2026, 1, 25),
+            "status": "ACTIVE",
+            "county": "Broward",
+            "property_address": "678 Flamingo Rd, Pembroke Pines, FL 33028",
+            "parcel_id": "51-40-04-02-0560",
+        },
+        {
+            "lien_id": "lien-009",
+            "tenant_id": "system",
+            "certificate_number": "PB-2023-3456",
+            "purchase_amount": Decimal("3500"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2023, 9, 18),
+            "redemption_deadline": date(2025, 9, 18),
+            "status": "REDEEMED",
+            "county": "Palm Beach",
+            "property_address": "901 Royal Palm Way, Palm Beach, FL 33480",
+            "parcel_id": "50-43-43-02-00-000",
+        },
+        {
+            "lien_id": "lien-010",
+            "tenant_id": "system",
+            "certificate_number": "MD-2024-0234",
+            "purchase_amount": Decimal("2800"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 8, 12),
+            "redemption_deadline": date(2026, 8, 12),
+            "status": "ACTIVE",
+            "county": "Miami-Dade",
+            "property_address": "445 Collins Ave, Miami Beach, FL 33140",
+            "parcel_id": "02-3242-015-0780",
+        },
+        {
+            "lien_id": "lien-011",
+            "tenant_id": "system",
+            "certificate_number": "BR-2024-5678",
+            "purchase_amount": Decimal("11200"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 4, 30),
+            "redemption_deadline": date(2026, 4, 30),
+            "status": "ACTIVE",
+            "county": "Broward",
+            "property_address": "112 Las Olas Blvd, Fort Lauderdale, FL 33301",
+            "parcel_id": "50-42-06-08-0340",
+        },
+        {
+            "lien_id": "lien-012",
+            "tenant_id": "system",
+            "certificate_number": "PB-2024-6789",
+            "purchase_amount": Decimal("2500"),
+            "interest_rate": Decimal("18"),
+            "sale_date": date(2024, 6, 28),
+            "redemption_deadline": date(2026, 6, 28),
+            "status": "ACTIVE",
+            "county": "Palm Beach",
+            "property_address": "333 Clematis St, West Palm Beach, FL 33401",
+            "parcel_id": "74-43-43-18-14-001",
+        },
+    ]
+
+    # Create liens directly in storage
+    for lien_data in mock_liens:
+        # Add timestamps
+        lien_data["created_at"] = datetime.now()
+        lien_data["updated_at"] = datetime.now()
+
+        # Store in LocalStorageClient
+        storage._local_client._storage["liens"][lien_data["lien_id"]] = lien_data
+
+    _mock_data_loaded = True
+    print(f"✓ Loaded {len(mock_liens)} mock liens into LocalStorageClient")
+
+
+def _get_storage():
+    """
+    Get or create storage client.
+
+    Uses same pattern as api/main.py:
+    - If GOOGLE_PROJECT_ID is "local-dev" (default), uses LocalStorageClient (in-memory)
+    - Otherwise, uses actual Firestore with the project ID
+    """
+    global _storage
+    if _storage is None:
+        # Get project_id from environment (same as api/main.py)
+        project_id = os.getenv("GOOGLE_PROJECT_ID", "local-dev")
+        # FirestoreClient automatically uses LocalStorageClient when project_id == "local-dev"
+        _storage = FirestoreClient(project_id=project_id)
+
+        # Load mock data if using local storage
+        if _storage._use_local:
+            _load_mock_data(_storage)
+
+    return _storage
 
 
 def _run_async(coro):
@@ -71,6 +287,7 @@ def calculate_lien_interest(lien_id: str) -> str:
         JSON string with interest calculation details including principal, rate, days elapsed, interest accrued, and total owed
     """
     try:
+        storage = _get_storage()
         agent = InterestCalculatorAgent(storage=storage)
         result = _run_async(
             agent.run(
@@ -93,6 +310,7 @@ def check_redemption_deadlines() -> str:
         Summary of deadlines checked and alerts sent
     """
     try:
+        storage = _get_storage()
         agent = DeadlineAlertAgent(storage=storage)
         result = _run_async(
             agent.run(
@@ -117,6 +335,7 @@ def record_payment(lien_id: str, amount: float, payment_date: Optional[str] = No
         Payment confirmation with updated balances and redemption status
     """
     try:
+        storage = _get_storage()
         agent = PaymentMonitorAgent(storage=storage)
         parameters = {"amount": amount}
         if payment_date:
@@ -147,6 +366,7 @@ def list_liens(status: Optional[str] = None, county: Optional[str] = None, limit
         List of liens matching the criteria with key details
     """
     try:
+        storage = _get_storage()
         agent = LienTrackerAgent(storage=storage)
         parameters = {"limit": limit, "order_by": "created_at"}
         if status:
@@ -176,6 +396,7 @@ def get_portfolio_summary() -> str:
         Portfolio statistics with performance metrics and recommendations
     """
     try:
+        storage = _get_storage()
         agent = PortfolioDashboardAgent(storage=storage)
         result = _run_async(
             agent.run(
@@ -202,6 +423,7 @@ def send_notification(notification_type: str, title: str, message: str,
         Notification confirmation with notification ID
     """
     try:
+        storage = _get_storage()
         agent = CommunicationAgent(storage=storage)
         parameters = {
             "notification_type": notification_type,
@@ -237,6 +459,7 @@ def generate_redemption_notice(lien_id: str) -> str:
         Document generation confirmation with document ID and content
     """
     try:
+        storage = _get_storage()
         agent = DocumentGeneratorAgent(storage=storage)
         result = _run_async(
             agent.run(
@@ -256,7 +479,12 @@ def list_available_agents() -> str:
     Returns:
         Description of each agent and what tasks they can perform
     """
-    return """Available LienOS Agents:
+    storage = _get_storage()
+    storage_type = "LocalStorageClient (in-memory)" if storage._use_local else f"Firestore ({storage.project_id})"
+
+    return f"""Available LienOS Agents:
+
+**Storage:** {storage_type}
 
 1. Interest Calculator Agent
    - Calculate accrued interest on liens
