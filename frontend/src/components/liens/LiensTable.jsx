@@ -21,87 +21,91 @@ export function LiensTable({ liens = [], loading = false }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-slate-200">
-            <th className="text-left text-xs font-medium text-slate-600 px-4 py-3">
-              Certificate #
-            </th>
-            <th className="text-left text-xs font-medium text-slate-600 px-4 py-3">
-              Property Address
-            </th>
-            <th className="text-left text-xs font-medium text-slate-600 px-4 py-3">
-              County
-            </th>
-            <th className="text-right text-xs font-medium text-slate-600 px-4 py-3">
-              Face Value
-            </th>
-            <th className="text-right text-xs font-medium text-slate-600 px-4 py-3">
-              Interest Rate
-            </th>
-            <th className="text-left text-xs font-medium text-slate-600 px-4 py-3">
-              Purchase Date
-            </th>
-            <th className="text-left text-xs font-medium text-slate-600 px-4 py-3">
-              Status
-            </th>
-            <th className="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {liens.map((lien) => (
-            <tr
-              key={lien.id}
-              className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-            >
-              <td className="px-4 py-3">
-                <span className="text-sm font-medium text-slate-900">
-                  {lien.certificate_number || '-'}
-                </span>
-              </td>
-              <td className="px-4 py-3">
-                <span className="text-sm text-slate-900">
-                  {lien.property_address || 'N/A'}
-                </span>
-              </td>
-              <td className="px-4 py-3">
-                <span className="text-sm text-slate-600">
-                  {lien.county || '-'}
-                </span>
-              </td>
-              <td className="text-right px-4 py-3">
-                <span className="text-sm font-medium text-slate-900">
-                  ${(lien.purchase_amount || 0).toLocaleString()}
-                </span>
-              </td>
-              <td className="text-right px-4 py-3">
-                <span className="text-sm text-slate-900">
-                  {(lien.interest_rate || 0).toFixed(2)}%
-                </span>
-              </td>
-              <td className="px-4 py-3">
-                <span className="text-sm text-slate-600">
-                  {lien.purchase_date
-                    ? format(new Date(lien.purchase_date), 'MMM d, yyyy')
-                    : '-'}
-                </span>
-              </td>
-              <td className="px-4 py-3">
-                <StatusBadge status={lien.status} />
-              </td>
-              <td className="px-4 py-3">
-                <Link
-                  to={`/liens/${lien.id}`}
-                  className="inline-flex items-center text-slate-400 hover:text-slate-600"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </td>
+    <div className="overflow-x-auto -mx-4 md:mx-0">
+      <div className="inline-block min-w-full align-middle">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-slate-200">
+              <th className="text-left text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap">
+                Certificate #
+              </th>
+              <th className="text-left text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap">
+                Property Address
+              </th>
+              <th className="text-left text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap hidden sm:table-cell">
+                County
+              </th>
+              <th className="text-right text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap">
+                Amount
+              </th>
+              <th className="text-right text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                Interest
+              </th>
+              <th className="text-left text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+                Purchase Date
+              </th>
+              <th className="text-left text-xs font-medium text-slate-600 px-3 md:px-4 py-3 whitespace-nowrap">
+                Status
+              </th>
+              <th className="px-3 md:px-4 py-3"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {liens.map((lien) => (
+              <tr
+                key={lien.id}
+                className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              >
+                <td className="px-3 md:px-4 py-3">
+                  <span className="text-sm font-medium text-slate-900 whitespace-nowrap">
+                    {lien.certificate_number || '-'}
+                  </span>
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <div className="max-w-[200px] md:max-w-none">
+                    <span className="text-sm text-slate-900 block truncate">
+                      {lien.property_address || 'N/A'}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-3 md:px-4 py-3 hidden sm:table-cell">
+                  <span className="text-sm text-slate-600 whitespace-nowrap">
+                    {lien.county || '-'}
+                  </span>
+                </td>
+                <td className="text-right px-3 md:px-4 py-3">
+                  <span className="text-sm font-medium text-slate-900 whitespace-nowrap">
+                    ${(lien.purchase_amount || 0).toLocaleString()}
+                  </span>
+                </td>
+                <td className="text-right px-3 md:px-4 py-3 hidden md:table-cell">
+                  <span className="text-sm text-slate-900 whitespace-nowrap">
+                    {(lien.interest_rate || 0).toFixed(2)}%
+                  </span>
+                </td>
+                <td className="px-3 md:px-4 py-3 hidden lg:table-cell">
+                  <span className="text-sm text-slate-600 whitespace-nowrap">
+                    {lien.purchase_date
+                      ? format(new Date(lien.purchase_date), 'MMM d, yyyy')
+                      : '-'}
+                  </span>
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <StatusBadge status={lien.status} />
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <Link
+                    to={`/liens/${lien.id}`}
+                    className="inline-flex items-center text-slate-400 hover:text-slate-600 min-h-[44px] min-w-[44px] justify-center"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -58,37 +58,37 @@ export function LienDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/liens" className="p-2 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+          <Link to="/liens" className="p-2 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 min-h-[44px] min-w-[44px] flex items-center justify-center">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base md:text-lg font-semibold text-slate-900 truncate">
               {lien.certificate_number || 'Lien Details'}
             </h1>
-            <p className="text-sm text-slate-600">{lien.property_address}</p>
+            <p className="text-sm text-slate-600 truncate">{lien.property_address}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <StatusBadge status={lien.status} />
-          <Button size="sm" variant="secondary">Edit</Button>
+          <Button size="sm" variant="secondary" className="flex-1 sm:flex-none min-h-[44px]">Edit</Button>
         </div>
       </div>
 
       {/* Content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Main details */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Property Info */}
           <Card>
             <CardHeader>
               <CardTitle>Property Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InfoItem
                   icon={MapPin}
                   label="Address"
@@ -117,7 +117,7 @@ export function LienDetailPage() {
               <CardTitle>Financial Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <InfoItem
                   icon={DollarSign}
                   label="Purchase Amount"
@@ -192,7 +192,7 @@ export function LienDetailPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <InterestCalculator
             lienId={id}
             faceValue={lien.purchase_amount || 0}

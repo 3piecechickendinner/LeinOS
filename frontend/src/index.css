@@ -2,10 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar styles */
+/* =============================================================================
+   GLOBAL RESPONSIVE STYLES
+   ============================================================================= */
+
+@layer base {
+  /* Base font size and responsive scaling */
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure body takes full viewport */
+  body {
+    @apply min-h-screen bg-slate-50 text-slate-900;
+  }
+
+  /* Touch-friendly tap targets on mobile */
+  @media (max-width: 768px) {
+    button,
+    a,
+    input[type="checkbox"],
+    input[type="radio"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Responsive typography */
+  h1 {
+    @apply text-xl md:text-2xl lg:text-3xl font-bold;
+  }
+
+  h2 {
+    @apply text-lg md:text-xl lg:text-2xl font-semibold;
+  }
+
+  h3 {
+    @apply text-base md:text-lg font-semibold;
+  }
+
+  /* Readable line lengths */
+  p {
+    @apply max-w-prose;
+  }
+}
+
+@layer components {
+  /* Responsive container with proper padding */
+  .container-responsive {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 1280px;
+  }
+
+  /* Responsive card padding */
+  .card-responsive {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+
+  /* Touch-friendly button */
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px] inline-flex items-center justify-center;
+  }
+
+  /* Responsive grid with proper gaps */
+  .grid-responsive {
+    @apply grid gap-3 md:gap-4 lg:gap-6;
+  }
+
+  /* Responsive spacing */
+  .space-responsive {
+    @apply space-y-3 md:space-y-4 lg:space-y-6;
+  }
+}
+
+/* Custom scrollbar styles - thinner on mobile */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
+}
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -21,9 +103,13 @@
   background: #94a3b8;
 }
 
-/* Table styles */
+/* Table styles - responsive */
 .table-container {
-  @apply overflow-x-auto;
+  @apply overflow-x-auto -mx-4 md:mx-0;
+}
+
+.table-container table {
+  @apply min-w-full;
 }
 
 /* Form focus styles */
@@ -31,4 +117,79 @@ input:focus,
 select:focus,
 textarea:focus {
   @apply outline-none ring-2 ring-blue-500 ring-offset-1;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  /* Prevent zoom on input focus on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Better mobile spacing */
+  .mobile-compact {
+    @apply px-3 py-2;
+  }
+
+  /* Full-width buttons on mobile */
+  .mobile-full {
+    @apply w-full;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Optimize for tablet portrait and landscape */
+  .tablet-grid {
+    @apply grid-cols-2;
+  }
+}
+
+/* Desktop-specific */
+@media (min-width: 1025px) {
+  /* Wider content on large screens */
+  .desktop-wide {
+    @apply max-w-screen-2xl;
+  }
+}
+
+/* Utility classes for hiding/showing at breakpoints */
+@layer utilities {
+  .hide-mobile {
+    @apply hidden sm:block;
+  }
+
+  .show-mobile {
+    @apply block sm:hidden;
+  }
+
+  .hide-tablet {
+    @apply hidden md:block;
+  }
+
+  .show-tablet {
+    @apply md:block lg:hidden;
+  }
+
+  /* Safe area padding for mobile devices with notches */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Prevent text selection on touch devices for UI elements */
+  .touch-select-none {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }

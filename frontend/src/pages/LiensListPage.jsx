@@ -53,9 +53,9 @@ export function LiensListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">Liens</h1>
-        <Button size="sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-lg md:text-xl font-semibold text-slate-900">Liens</h1>
+        <Button size="sm" className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-1" />
           Add Lien
         </Button>
@@ -64,7 +64,7 @@ export function LiensListPage() {
       {/* Search and filters */}
       <Card>
         <CardContent className="py-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -72,13 +72,14 @@ export function LiensListPage() {
                 placeholder="Search by property, certificate, or county..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-md placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-md placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
               />
             </div>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               <Filter className="h-4 w-4 mr-1" />
               Filters

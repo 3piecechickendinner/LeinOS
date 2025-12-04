@@ -7,6 +7,8 @@ import {
   Bell,
   Settings,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
 import apiClient from '../api/client';
 
@@ -21,12 +23,13 @@ const bottomNav = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-function SidebarLink({ item, unreadCount }) {
+function SidebarLink({ item, unreadCount, onClick }) {
   const showBadge = item.showBadge && unreadCount > 0;
 
   return (
     <NavLink
       to={item.href}
+      onClick={onClick}
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors
         ${isActive
@@ -49,6 +52,7 @@ function SidebarLink({ item, unreadCount }) {
 export function AppLayout() {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -67,29 +71,63 @@ export function AppLayout() {
     }
   }
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
     <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
-      <aside className="w-56 flex flex-col bg-white border-r border-slate-200">
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+          onClick={closeMobileMenu}
+        />
+      )}
+
+      {/* Sidebar - Desktop: always visible, Mobile: slide-out */}
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-50
+          w-64 md:w-56 flex flex-col bg-white border-r border-slate-200
+          transform transition-transform duration-300 ease-in-out
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
         {/* Logo */}
-        <div className="h-14 flex items-center px-4 border-b border-slate-200">
+        <div className="h-14 flex items-center justify-between px-4 border-b border-slate-200">
           <span className="text-lg font-bold text-slate-900">LienOS</span>
+          {/* Close button - Mobile only */}
+          <button
+            onClick={closeMobileMenu}
+            className="md:hidden p-2 text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => (
-            <SidebarLink key={item.name} item={item} unreadCount={unreadCount} />
+            <SidebarLink
+              key={item.name}
+              item={item}
+              unreadCount={unreadCount}
+              onClick={closeMobileMenu}
+            />
           ))}
         </nav>
 
         {/* Bottom navigation */}
         <div className="px-3 py-4 border-t border-slate-200 space-y-1">
           {bottomNav.map((item) => (
-            <SidebarLink key={item.name} item={item} unreadCount={0} />
+            <SidebarLink
+              key={item.name}
+              item={item}
+              unreadCount={0}
+              onClick={closeMobileMenu}
+            />
           ))}
           <button
-            className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors"
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors min-h-[44px]"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -98,16 +136,29 @@ export function AppLayout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full md:w-auto">
         {/* Header */}
-        <header className="h-14 flex items-center justify-between px-6 bg-white border-b border-slate-200">
-          <h1 className="text-sm font-medium text-slate-900">
+        <header className="h-14 flex items-center justify-between px-4 md:px-6 bg-white border-b border-slate-200">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden p-2 -ml-2 text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+
+          {/* Title - hidden on mobile */}
+          <h1 className="hidden md:block text-sm font-medium text-slate-900">
             Tax Lien Management
           </h1>
-          <div className="flex items-center gap-4">
+
+          {/* Logo - mobile only */}
+          <span className="md:hidden text-base font-bold text-slate-900">LienOS</span>
+
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => navigate('/notifications')}
-              className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors"
+              className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
@@ -123,7 +174,7 @@ export function AppLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>

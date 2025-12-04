@@ -68,12 +68,13 @@ export function DeadlinesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">Upcoming Deadlines</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-lg md:text-xl font-semibold text-slate-900">Upcoming Deadlines</h1>
         <Button
           variant="secondary"
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
+          className="w-full sm:w-auto min-h-[44px]"
         >
           <Filter className="h-4 w-4 mr-1" />
           Filters
@@ -112,7 +113,7 @@ export function DeadlinesPage() {
       )}
 
       {/* Summary stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <Card>
           <CardContent className="py-4">
             <div className="flex items-center gap-3">

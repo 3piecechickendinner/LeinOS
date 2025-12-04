@@ -73,12 +73,13 @@ export function NotificationsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">Notifications</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-lg md:text-xl font-semibold text-slate-900">Notifications</h1>
         <Button
           variant="secondary"
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
+          className="w-full sm:w-auto min-h-[44px]"
         >
           <Filter className="h-4 w-4 mr-1" />
           Filters
@@ -117,10 +118,10 @@ export function NotificationsPage() {
       )}
 
       {/* Quick filter tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-1 sm:gap-2 border-b border-slate-200 overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+          className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap min-h-[44px] ${
             filter === 'all'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-600 hover:text-slate-900'

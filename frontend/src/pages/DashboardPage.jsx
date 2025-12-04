@@ -47,16 +47,16 @@ export function DashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
-        <Link to="/liens">
-          <Button size="sm">Add Lien</Button>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-lg md:text-xl font-semibold text-slate-900">Dashboard</h1>
+        <Link to="/liens" className="w-full sm:w-auto">
+          <Button size="sm" className="w-full sm:w-auto">Add Lien</Button>
         </Link>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatsCard
           title="Total Portfolio Value"
           value={stats.totalValue}
@@ -87,7 +87,7 @@ export function DashboardPage() {
       </div>
 
       {/* Charts and tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <RevenueChart />
 
         {/* Recent Liens */}
@@ -108,41 +108,43 @@ export function DashboardPage() {
                 No liens found
               </div>
             ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left text-xs font-medium text-slate-600 px-4 py-2">
-                      Property
-                    </th>
-                    <th className="text-right text-xs font-medium text-slate-600 px-4 py-2">
-                      Amount
-                    </th>
-                    <th className="text-right text-xs font-medium text-slate-600 px-4 py-2">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentLiens.map((lien) => (
-                    <tr key={lien.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-4 py-2">
-                        <Link
-                          to={`/liens/${lien.id}`}
-                          className="text-sm text-slate-900 hover:text-blue-600"
-                        >
-                          {lien.property_address || 'N/A'}
-                        </Link>
-                      </td>
-                      <td className="text-right text-sm text-slate-900 px-4 py-2">
-                        ${(lien.purchase_amount || 0).toLocaleString()}
-                      </td>
-                      <td className="text-right px-4 py-2">
-                        <StatusBadge status={lien.status} />
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left text-xs font-medium text-slate-600 px-3 md:px-4 py-2 whitespace-nowrap">
+                        Property
+                      </th>
+                      <th className="text-right text-xs font-medium text-slate-600 px-3 md:px-4 py-2 whitespace-nowrap">
+                        Amount
+                      </th>
+                      <th className="text-right text-xs font-medium text-slate-600 px-3 md:px-4 py-2 whitespace-nowrap">
+                        Status
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {recentLiens.map((lien) => (
+                      <tr key={lien.id} className="border-b border-slate-100 last:border-0">
+                        <td className="px-3 md:px-4 py-2 max-w-[200px]">
+                          <Link
+                            to={`/liens/${lien.id}`}
+                            className="text-sm text-slate-900 hover:text-blue-600 block truncate"
+                          >
+                            {lien.property_address || 'N/A'}
+                          </Link>
+                        </td>
+                        <td className="text-right text-sm text-slate-900 px-3 md:px-4 py-2 whitespace-nowrap">
+                          ${(lien.purchase_amount || 0).toLocaleString()}
+                        </td>
+                        <td className="text-right px-3 md:px-4 py-2">
+                          <StatusBadge status={lien.status} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
