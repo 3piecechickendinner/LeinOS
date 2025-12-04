@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -7,6 +8,7 @@ import { LiensTable } from '../components/liens/LiensTable';
 import apiClient from '../api/client';
 
 export function LiensListPage() {
+  const navigate = useNavigate();
   const [liens, setLiens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +57,11 @@ export function LiensListPage() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-lg md:text-xl font-semibold text-slate-900">Liens</h1>
-        <Button size="sm" className="w-full sm:w-auto">
+        <Button
+          size="sm"
+          className="w-full sm:w-auto"
+          onClick={() => navigate('/liens/new')}
+        >
           <Plus className="h-4 w-4 mr-1" />
           Add Lien
         </Button>
