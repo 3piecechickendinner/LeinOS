@@ -6,7 +6,8 @@ const DEFAULT_TENANT = 'demo-user';
 
 // Toggle for demo mode with mock data
 // Set to false to use real API even in development
-const USE_MOCK_DATA = false;
+// Note: Notifications and Deadlines have mock fallbacks regardless of this setting
+const USE_MOCK_DATA = true;
 
 // Mock data for demos and screenshots
 const mockData = {
@@ -399,6 +400,46 @@ class ApiClient {
     return this.request(`/deadlines${queryString ? `?${queryString}` : ''}`);
   }
 
+  async getUpcomingDeadlines(days = 90) {
+    if (USE_MOCK_DATA) {
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+      return mockData.liens
+        .filter(l => {
+          if (l.status !== 'active') return false;
+          const deadline = new Date(l.redemption_deadline);
+          return deadline >= now && deadline <= futureDate;
+        })
+        .map(l => {
+          const deadline = new Date(l.redemption_deadline);
+          const daysRemaining = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+
+          return {
+            deadline_id: `deadline-${l.id}`,
+            lien_id: l.id,
+            certificate_number: l.certificate_number,
+            property_address: l.property_address,
+            deadline_type: 'redemption',
+            deadline_date: l.redemption_deadline,
+            days_remaining: daysRemaining,
+            description: `Redemption period ends`,
+            status: 'pending',
+            created_at: l.purchase_date,
+          };
+        })
+        .sort((a, b) => a.days_remaining - b.days_remaining);
+    }
+
+    const response = await this.request(`/deadlines/upcoming?days=${days}`);
+
+    // Handle wrapped response
+    if (response?.data) {
+      return response.data;
+    }
+    return response;
+  }
+
   async createDeadline(data) {
     if (USE_MOCK_DATA) {
       return { id: `deadline-${Date.now()}`, ...data };
@@ -406,6 +447,15 @@ class ApiClient {
     return this.request('/deadlines', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async markDeadlineCompleted(deadlineId) {
+    if (USE_MOCK_DATA) {
+      return { success: true };
+    }
+    return this.request(`/deadlines/${deadlineId}/complete`, {
+      method: 'PUT',
     });
   }
 
@@ -452,25 +502,51 @@ class ApiClient {
   // Notifications
   async getNotifications(params = {}) {
     if (USE_MOCK_DATA) {
-      return [
-        {
-          id: 'notif-001',
-          type: 'deadline_approaching',
-          message: 'Redemption deadline approaching for MD-2024-0847',
-          created_at: new Date().toISOString(),
-          read: false,
-        },
-        {
-          id: 'notif-002',
-          type: 'payment_received',
-          message: 'Payment received for BR-2023-4521',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          read: true,
-        },
-      ];
+      return {
+        notifications: [
+          {
+            notification_id: 'notif-001',
+            notification_type: 'deadline_approaching',
+            title: 'Deadline Approaching',
+            message: 'Redemption deadline approaching for MD-2024-0847 in 5 days',
+            lien_id: 'lien-001',
+            priority: 'high',
+            created_at: new Date().toISOString(),
+            read: false,
+          },
+          {
+            notification_id: 'notif-002',
+            notification_type: 'payment_received',
+            title: 'Payment Received',
+            message: 'Payment received for BR-2023-4521',
+            lien_id: 'lien-005',
+            priority: 'normal',
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+            read: true,
+          },
+          {
+            notification_id: 'notif-003',
+            notification_type: 'lien_created',
+            title: 'New Lien Created',
+            message: 'Successfully created lien for 890 Ocean Blvd',
+            lien_id: 'lien-006',
+            priority: 'normal',
+            created_at: new Date(Date.now() - 172800000).toISOString(),
+            read: false,
+          },
+        ],
+        count: 3,
+        unread_count: 2,
+      };
     }
     const queryString = new URLSearchParams(params).toString();
-    return this.request(`/notifications${queryString ? `?${queryString}` : ''}`);
+    const response = await this.request(`/notifications${queryString ? `?${queryString}` : ''}`);
+
+    // Handle wrapped response
+    if (response?.data) {
+      return response.data;
+    }
+    return response;
   }
 
   async markNotificationRead(notificationId) {
@@ -478,8 +554,16 @@ class ApiClient {
       return { success: true };
     }
     return this.request(`/notifications/${notificationId}/read`, {
-      method: 'POST',
+      method: 'PUT',
     });
+  }
+
+  async getUnreadNotificationCount() {
+    if (USE_MOCK_DATA) {
+      return { count: 2 };
+    }
+    const response = await this.getNotifications({ unread_only: true });
+    return { count: response?.unread_count || response?.notifications?.length || 0 };
   }
 
   // Documents

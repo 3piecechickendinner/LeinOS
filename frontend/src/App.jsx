@@ -4,6 +4,8 @@ import AppLayout from './layout/AppLayout';
 import DashboardPage from './pages/DashboardPage';
 import LiensListPage from './pages/LiensListPage';
 import LienDetailPage from './pages/LienDetailPage';
+import NotificationsPage from './pages/NotificationsPage';
+import DeadlinesPage from './pages/DeadlinesPage';
 
 function App() {
   return (
@@ -12,8 +14,8 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="liens" element={<LiensListPage />} />
         <Route path="liens/:id" element={<LienDetailPage />} />
-        <Route path="deadlines" element={<PlaceholderPage title="Deadlines" />} />
-        <Route path="notifications" element={<PlaceholderPage title="Notifications" />} />
+        <Route path="deadlines" element={<DeadlinesPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="settings" element={<PlaceholderPage title="Settings" />} />
       </Route>
     </Routes>
