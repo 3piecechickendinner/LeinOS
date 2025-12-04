@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LienOS OG Image Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        #og-canvas {
+            border: 2px solid #334155;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="og-canvas" width="1200" height="630"></canvas>
+    <button onclick="downloadImage()">Download OG Image</button>
+
+    <script>
+        const canvas = document.getElementById('og-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Draw background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+        gradient.addColorStop(0, '#0f172a');
+        gradient.addColorStop(1, '#1e293b');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 1200, 630);
+
+        // Add subtle pattern
+        ctx.fillStyle = '#334155';
+        ctx.globalAlpha = 0.1;
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 1200;
+            const y = Math.random() * 630;
+            const size = Math.random() * 100 + 50;
+            ctx.fillRect(x, y, size, size);
+        }
+        ctx.globalAlpha = 1;
+
+        // Draw main container
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(80, 80, 1040, 470);
+
+        // Border
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(80, 80, 1040, 470);
+
+        // Logo/Brand area
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillRect(120, 120, 80, 80);
+
+        // "L" in logo
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 60px Inter';
+        ctx.fillText('L', 140, 180);
+
+        // LienOS text
+        ctx.fillStyle = '#f1f5f9';
+        ctx.font = 'bold 80px Inter';
+        ctx.fillText('LienOS', 230, 185);
+
+        // Tagline
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '36px Inter';
+        ctx.fillText('AI-Powered Tax Lien Management', 120, 270);
+
+        // Features section
+        ctx.fillStyle = '#64748b';
+        ctx.font = '24px Inter';
+        ctx.fillText('7 Specialized AI Agents:', 120, 350);
+
+        // Agent icons/boxes
+        const agents = [
+            '📊 Analytics',
+            '💰 Interest',
+            '⏰ Deadlines',
+            '📄 Reports',
+            '💳 Payments',
+            '🔔 Alerts',
+            '📈 Portfolio'
+        ];
+
+        const startX = 120;
+        const startY = 390;
+        const boxWidth = 130;
+        const boxHeight = 50;
+        const gap = 15;
+
+        agents.forEach((agent, index) => {
+            const x = startX + (index * (boxWidth + gap));
+
+            // Box
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(x, startY, boxWidth, boxHeight);
+
+            // Border
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, startY, boxWidth, boxHeight);
+
+            // Text
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '16px Inter';
+            const textWidth = ctx.measureText(agent).width;
+            ctx.fillText(agent, x + (boxWidth - textWidth) / 2, startY + 30);
+        });
+
+        // Bottom tagline
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'italic 20px Inter';
+        ctx.fillText('Automate operations • Track portfolios • Maximize returns', 120, 500);
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'og-image.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
