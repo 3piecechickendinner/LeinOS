@@ -269,7 +269,25 @@ class ApiClient {
       return liens;
     }
     const queryString = new URLSearchParams(params).toString();
-    return this.request(`/liens${queryString ? `?${queryString}` : ''}`);
+    const response = await this.request(`/liens${queryString ? `?${queryString}` : ''}`);
+
+    // Handle API response format: {liens: [...], count: number, ...}
+    // Return just the liens array for consistency with mock data
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) {
+        return response; // Already an array
+      }
+      if (Array.isArray(response.liens)) {
+        return response.liens; // Extract liens array
+      }
+      if (Array.isArray(response.data?.liens)) {
+        return response.data.liens; // Handle wrapped response
+      }
+    }
+
+    // Fallback: return empty array on unexpected format
+    console.error('Unexpected API response format for getLiens:', response);
+    return [];
   }
 
   async getLien(lienId) {
@@ -396,7 +414,21 @@ class ApiClient {
     if (USE_MOCK_DATA) {
       return mockData.portfolioStats;
     }
-    return this.request('/portfolio/summary');
+    const response = await this.request('/portfolio/summary');
+
+    // Handle API response format: return data directly or extract from wrapper
+    if (response && typeof response === 'object') {
+      // If wrapped in {success: true, data: {...}}, extract data
+      if (response.data && typeof response.data === 'object') {
+        return response.data;
+      }
+      // Otherwise return as-is
+      return response;
+    }
+
+    // Fallback
+    console.error('Unexpected API response format for getPortfolioSummary:', response);
+    return null;
   }
 
   async getPortfolioAnalytics() {

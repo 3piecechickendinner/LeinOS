@@ -25,7 +25,14 @@ export function LiensListPage() {
         params.status = statusFilter;
       }
       const data = await apiClient.getLiens(params);
-      setLiens(data);
+
+      // Defensive: ensure data is an array
+      if (Array.isArray(data)) {
+        setLiens(data);
+      } else {
+        console.error('API returned non-array data:', data);
+        setLiens([]);
+      }
     } catch (error) {
       console.error('Failed to fetch liens:', error);
       setLiens([]);

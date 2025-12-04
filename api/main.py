@@ -453,7 +453,8 @@ async def list_liens(
             task="list_liens",
             parameters=parameters
         )
-        return {"success": True, "data": result}
+        # Return data directly for consistent frontend consumption
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -646,6 +647,7 @@ async def send_sms(
 # Portfolio Dashboard Endpoints
 # =============================================================================
 
+@app.get("/api/portfolio/summary", tags=["Portfolio Dashboard"])
 @app.post("/api/portfolio/summary", tags=["Portfolio Dashboard"])
 async def calculate_portfolio_summary(tenant_id: str = Depends(get_tenant_id)):
     """Calculate comprehensive portfolio summary"""
@@ -655,7 +657,8 @@ async def calculate_portfolio_summary(tenant_id: str = Depends(get_tenant_id)):
             tenant_id=tenant_id,
             task="calculate_portfolio_summary"
         )
-        return {"success": True, "data": result}
+        # Return data directly for consistent frontend consumption
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

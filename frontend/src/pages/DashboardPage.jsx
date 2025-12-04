@@ -34,7 +34,8 @@ export function DashboardPage() {
           });
         }
 
-        setRecentLiens(liens);
+        // Defensive: ensure liens is an array
+        setRecentLiens(Array.isArray(liens) ? liens : []);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
