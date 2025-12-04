@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   DollarSign, FileText, TrendingUp, AlertCircle,
   Calculator, Clock, CreditCard, BarChart3,
-  FileCheck, Bell, FolderOpen, X, ArrowRight
+  FileCheck, Bell, FolderOpen, X, ArrowRight, Mail
 } from 'lucide-react';
 import { StatsCard } from '../components/dashboard/StatsCard';
 import { RevenueChart } from '../components/dashboard/RevenueChart';
@@ -22,6 +22,9 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showHero, setShowHero] = useState(() => {
     return localStorage.getItem('lienOSHeroDismissed') !== 'true';
+  });
+  const [showContact, setShowContact] = useState(() => {
+    return localStorage.getItem('lienOSContactDismissed') !== 'true';
   });
 
   useEffect(() => {
@@ -56,6 +59,11 @@ export function DashboardPage() {
   const handleDismissHero = () => {
     localStorage.setItem('lienOSHeroDismissed', 'true');
     setShowHero(false);
+  };
+
+  const handleDismissContact = () => {
+    localStorage.setItem('lienOSContactDismissed', 'true');
+    setShowContact(false);
   };
 
   return (
@@ -140,6 +148,43 @@ export function DashboardPage() {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Contact Section - Subtle partnership inquiry */}
+      {showContact && (
+        <Card className="relative bg-slate-50 border-slate-200">
+          <button
+            onClick={handleDismissContact}
+            className="absolute top-3 right-3 p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <CardContent className="py-4 px-5">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 p-2 bg-blue-100 rounded-md">
+                <Mail className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <p className="text-sm font-semibold text-slate-900 mb-1">
+                  Want LienOS for your organization?
+                </p>
+                <p className="text-sm text-slate-600 mb-2">
+                  We're exploring partnerships with tax lien investors and training companies.
+                  Get in touch to discuss custom deployments.
+                </p>
+                <a
+                  href="mailto:sdhines3@gmail.com"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  sdhines3@gmail.com
+                </a>
               </div>
             </div>
           </CardContent>

@@ -44,97 +44,84 @@
         const canvas = document.getElementById('og-canvas');
         const ctx = canvas.getContext('2d');
 
-        // Draw background gradient
-        const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
-        gradient.addColorStop(0, '#0f172a');
-        gradient.addColorStop(1, '#1e293b');
-        ctx.fillStyle = gradient;
+        // Draw light background
+        ctx.fillStyle = '#f8fafc';
         ctx.fillRect(0, 0, 1200, 630);
 
-        // Add subtle pattern
-        ctx.fillStyle = '#334155';
-        ctx.globalAlpha = 0.1;
-        for (let i = 0; i < 50; i++) {
-            const x = Math.random() * 1200;
-            const y = Math.random() * 630;
-            const size = Math.random() * 100 + 50;
-            ctx.fillRect(x, y, size, size);
-        }
-        ctx.globalAlpha = 1;
+        // Draw main container with border
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(60, 60, 1080, 510);
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(60, 60, 1080, 510);
 
-        // Draw main container
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(80, 80, 1040, 470);
-
-        // Border
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(80, 80, 1040, 470);
-
-        // Logo/Brand area
+        // Logo box
         ctx.fillStyle = '#3b82f6';
-        ctx.fillRect(120, 120, 80, 80);
+        ctx.fillRect(100, 100, 56, 56);
 
         // "L" in logo
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 60px Inter';
-        ctx.fillText('L', 140, 180);
+        ctx.font = 'bold 42px Arial';
+        ctx.fillText('L', 116, 140);
 
         // LienOS text
-        ctx.fillStyle = '#f1f5f9';
-        ctx.font = 'bold 80px Inter';
-        ctx.fillText('LienOS', 230, 185);
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 56px Arial';
+        ctx.fillText('LienOS', 176, 140);
 
         // Tagline
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '36px Inter';
-        ctx.fillText('AI-Powered Tax Lien Management', 120, 270);
+        ctx.fillStyle = '#3b82f6';
+        ctx.font = '600 28px Arial';
+        ctx.fillText('AI-Powered Tax Lien Management', 100, 210);
 
-        // Features section
-        ctx.fillStyle = '#64748b';
-        ctx.font = '24px Inter';
-        ctx.fillText('7 Specialized AI Agents:', 120, 350);
+        // Description
+        ctx.fillStyle = '#475569';
+        ctx.font = '18px Arial';
+        ctx.fillText('7 specialized agents working 24/7 to automate your operations', 100, 250);
 
-        // Agent icons/boxes
+        // Agent cards
         const agents = [
-            '📊 Analytics',
-            '💰 Interest',
-            '⏰ Deadlines',
-            '📄 Reports',
-            '💳 Payments',
-            '🔔 Alerts',
-            '📈 Portfolio'
+            { emoji: '💰', title: 'Interest Calculator', desc: 'Real-time ROI tracking', x: 100, y: 300 },
+            { emoji: '⏰', title: 'Deadline Monitor', desc: 'Never miss redemption', x: 360, y: 300 },
+            { emoji: '💳', title: 'Payment Processor', desc: 'Auto reconciliation', x: 620, y: 300 },
+            { emoji: '📊', title: 'Portfolio Analytics', desc: 'Performance insights', x: 880, y: 300 },
+            { emoji: '📄', title: 'Document Generator', desc: 'Compliance automation', x: 230, y: 400 },
+            { emoji: '🔔', title: 'Communication Hub', desc: 'Alert coordination', x: 490, y: 400 },
+            { emoji: '📁', title: 'Lien Tracker', desc: 'Centralized management', x: 750, y: 400 }
         ];
 
-        const startX = 120;
-        const startY = 390;
-        const boxWidth = 130;
-        const boxHeight = 50;
-        const gap = 15;
-
-        agents.forEach((agent, index) => {
-            const x = startX + (index * (boxWidth + gap));
-
-            // Box
-            ctx.fillStyle = '#334155';
-            ctx.fillRect(x, startY, boxWidth, boxHeight);
-
-            // Border
-            ctx.strokeStyle = '#475569';
+        agents.forEach(agent => {
+            // Card background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(agent.x, agent.y, 240, 80);
+            ctx.strokeStyle = '#e2e8f0';
             ctx.lineWidth = 1;
-            ctx.strokeRect(x, startY, boxWidth, boxHeight);
+            ctx.strokeRect(agent.x, agent.y, 240, 80);
 
-            // Text
-            ctx.fillStyle = '#e2e8f0';
-            ctx.font = '16px Inter';
-            const textWidth = ctx.measureText(agent).width;
-            ctx.fillText(agent, x + (boxWidth - textWidth) / 2, startY + 30);
+            // Icon box
+            ctx.fillStyle = '#dbeafe';
+            ctx.fillRect(agent.x + 12, agent.y + 12, 32, 32);
+
+            // Emoji
+            ctx.font = '20px Arial';
+            ctx.fillText(agent.emoji, agent.x + 23, agent.y + 34);
+
+            // Title
+            ctx.fillStyle = '#0f172a';
+            ctx.font = '600 14px Arial';
+            ctx.fillText(agent.title, agent.x + 56, agent.y + 28);
+
+            // Description
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Arial';
+            ctx.fillText(agent.desc, agent.x + 56, agent.y + 48);
         });
 
         // Bottom tagline
         ctx.fillStyle = '#64748b';
-        ctx.font = 'italic 20px Inter';
-        ctx.fillText('Automate operations • Track portfolios • Maximize returns', 120, 500);
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Automate operations • Track portfolios • Maximize returns', 600, 540);
 
         function downloadImage() {
             const link = document.createElement('a');

@@ -1,61 +1,92 @@
 <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background gradient -->
-  <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+  <!-- Light background -->
+  <rect width="1200" height="630" fill="#f8fafc"/>
 
-  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  <!-- Main container with subtle border -->
+  <rect x="60" y="60" width="1080" height="510" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="8"/>
 
-  <!-- Main container -->
-  <rect x="80" y="80" width="1040" height="470" fill="#1e293b" stroke="#475569" stroke-width="2"/>
-
+  <!-- Header Section -->
   <!-- Logo box -->
-  <rect x="120" y="120" width="80" height="80" fill="#3b82f6"/>
-  <text x="145" y="180" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#ffffff">L</text>
+  <rect x="100" y="100" width="56" height="56" fill="#3b82f6" rx="6"/>
+  <text x="116" y="140" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#ffffff">L</text>
 
   <!-- LienOS text -->
-  <text x="230" y="185" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#f1f5f9">LienOS</text>
+  <text x="176" y="140" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#0f172a">LienOS</text>
 
   <!-- Tagline -->
-  <text x="120" y="270" font-family="Arial, sans-serif" font-size="36" fill="#94a3b8">AI-Powered Tax Lien Management</text>
+  <text x="100" y="210" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#3b82f6">AI-Powered Tax Lien Management</text>
 
-  <!-- Features title -->
-  <text x="120" y="350" font-family="Arial, sans-serif" font-size="24" fill="#64748b">7 Specialized AI Agents:</text>
+  <!-- Description -->
+  <text x="100" y="250" font-family="Arial, sans-serif" font-size="18" fill="#475569">7 specialized agents working 24/7 to automate your operations</text>
 
-  <!-- Agent boxes -->
+  <!-- Agent Cards Grid -->
   <g id="agents">
-    <!-- Analytics -->
-    <rect x="120" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="155" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Analytics</text>
+    <!-- Row 1 -->
+    <!-- Interest Calculator -->
+    <g>
+      <rect x="100" y="300" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="112" y="312" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="123" y="334" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">💰</text>
+      <text x="156" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Interest Calculator</text>
+      <text x="156" y="348" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Real-time ROI tracking</text>
+    </g>
 
-    <!-- Interest -->
-    <rect x="265" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="308" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Interest</text>
+    <!-- Deadline Monitor -->
+    <g>
+      <rect x="360" y="300" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="372" y="312" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="383" y="334" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">⏰</text>
+      <text x="416" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Deadline Monitor</text>
+      <text x="416" y="348" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Never miss redemption</text>
+    </g>
 
-    <!-- Deadlines -->
-    <rect x="410" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="442" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Deadlines</text>
+    <!-- Payment Processor -->
+    <g>
+      <rect x="620" y="300" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="632" y="312" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="643" y="334" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">💳</text>
+      <text x="676" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Payment Processor</text>
+      <text x="676" y="348" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Auto reconciliation</text>
+    </g>
 
-    <!-- Reports -->
-    <rect x="555" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="593" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Reports</text>
+    <!-- Portfolio Analytics -->
+    <g>
+      <rect x="880" y="300" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="892" y="312" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="903" y="334" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">📊</text>
+      <text x="936" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Portfolio Analytics</text>
+      <text x="936" y="348" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Performance insights</text>
+    </g>
 
-    <!-- Payments -->
-    <rect x="700" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="734" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Payments</text>
+    <!-- Row 2 (3 cards centered) -->
+    <!-- Document Generator -->
+    <g>
+      <rect x="230" y="400" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="242" y="412" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="253" y="434" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">📄</text>
+      <text x="286" y="428" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Document Generator</text>
+      <text x="286" y="448" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Compliance automation</text>
+    </g>
 
-    <!-- Alerts -->
-    <rect x="845" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="891" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Alerts</text>
+    <!-- Communication Hub -->
+    <g>
+      <rect x="490" y="400" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="502" y="412" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="513" y="434" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">🔔</text>
+      <text x="546" y="428" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Communication Hub</text>
+      <text x="546" y="448" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Alert coordination</text>
+    </g>
 
-    <!-- Portfolio -->
-    <rect x="990" y="390" width="130" height="50" fill="#334155" stroke="#475569"/>
-    <text x="1022" y="420" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0">Portfolio</text>
+    <!-- Lien Tracker -->
+    <g>
+      <rect x="750" y="400" width="240" height="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+      <rect x="762" y="412" width="32" height="32" fill="#dbeafe" rx="4"/>
+      <text x="773" y="434" font-family="Arial, sans-serif" font-size="20" fill="#3b82f6">📁</text>
+      <text x="806" y="428" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#0f172a">Lien Tracker</text>
+      <text x="806" y="448" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Centralized management</text>
+    </g>
   </g>
 
   <!-- Bottom tagline -->
-  <text x="120" y="500" font-family="Arial, sans-serif" font-size="20" font-style="italic" fill="#64748b">Automate operations • Track portfolios • Maximize returns</text>
+  <text x="600" y="540" font-family="Arial, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">Automate operations • Track portfolios • Maximize returns</text>
 </svg>
