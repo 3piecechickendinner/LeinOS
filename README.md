@@ -9,7 +9,9 @@
 
 LienOS is an intelligent multi-agent system that automates tax lien investment operations. Unlike passive tracking tools, LienOS employs proactive AI agents that monitor deadlines, calculate interest, process payments, and generate documents—all without manual intervention.
 
-## 🚀 Live Production API
+## 🚀 Live Production Deployment
+
+### Backend API (Google Cloud Run)
 
 **Production API:** https://lien-os-402756129398.us-central1.run.app
 
@@ -18,6 +20,12 @@ LienOS is an intelligent multi-agent system that automates tax lien investment o
 - **Health Check:** https://lien-os-402756129398.us-central1.run.app/health
 
 The API is deployed on **Google Cloud Run** with auto-scaling, high availability, and production-grade observability.
+
+### Frontend (Render)
+
+**Frontend URL:** Deploy using the instructions below to get your Render URL
+
+The React frontend is deployed as a static site on **Render** and connects to the Cloud Run backend. See [Deploy Frontend to Render](#deploy-frontend-to-render) for setup instructions.
 
 ## Why LienOS?
 
@@ -238,6 +246,65 @@ make deploy IAP=true
 
 # Deploy with custom port
 make deploy PORT=8080
+```
+
+### Deploy Frontend to Render
+
+The React frontend is deployed to Render as a static site and connects to the production Cloud Run backend.
+
+#### Automated Deployment with render.yaml
+
+LienOS includes a `render.yaml` Blueprint configuration for one-click deployment to Render:
+
+1. **Fork or push this repository to GitHub**
+
+2. **Create a new Static Site on Render:**
+   - Go to [Render Dashboard](https://dashboard.render.com/)
+   - Click "New" → "Blueprint"
+   - Connect your GitHub repository
+   - Render will automatically detect the `render.yaml` file
+
+3. **Automatic configuration:**
+   - Build command: `cd frontend && npm install && npm run build`
+   - Publish directory: `frontend/dist`
+   - Environment variable `VITE_API_URL` is pre-configured to point to the Cloud Run backend
+
+4. **Your frontend will be live at:** `https://lienos-frontend.onrender.com` (or your custom domain)
+
+#### Manual Deployment (Alternative)
+
+If you prefer manual setup:
+
+```bash
+# From the Render Dashboard
+# 1. New → Static Site
+# 2. Connect your repository
+# 3. Configure:
+#    - Name: lienos-frontend
+#    - Build command: cd frontend && npm install && npm run build
+#    - Publish directory: frontend/dist
+#    - Environment variable: VITE_API_URL=https://lien-os-402756129398.us-central1.run.app
+```
+
+#### Frontend Configuration
+
+The frontend automatically:
+- Uses **mock data in development** mode (`npm run dev`)
+- Connects to **production API in production** builds (`npm run build`)
+- Handles client-side routing with React Router
+- Includes security headers (X-Frame-Options, CSP, etc.)
+
+**Local development:**
+```bash
+cd frontend
+npm install
+npm run dev  # Runs on http://localhost:3000 with API proxy
+```
+
+**Production build (manual):**
+```bash
+cd frontend
+npm run build  # Creates optimized build in dist/
 ```
 
 ### CI/CD Pipeline

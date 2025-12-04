@@ -1,10 +1,12 @@
-const API_BASE = '/api';
+// Use environment variable for API base URL in production, fallback to proxy path for development
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 // Default tenant for development
 const DEFAULT_TENANT = 'default-tenant';
 
 // Toggle for demo mode with mock data
-const USE_MOCK_DATA = true;
+// In production, set to false to use real API
+const USE_MOCK_DATA = import.meta.env.MODE === 'development' ? true : false;
 
 // Mock data for demos and screenshots
 const mockData = {
