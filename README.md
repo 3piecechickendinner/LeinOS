@@ -136,6 +136,80 @@ make test
 make lint
 ```
 
+### Load Sample Data
+
+To populate your Firestore database with realistic mock data for testing:
+
+```bash
+# Ensure GOOGLE_PROJECT_ID is set in .env
+# Default tenant: demo-user
+python scripts/load_mock_data.py
+
+# Or specify a custom tenant ID
+python scripts/load_mock_data.py my-tenant-id
+```
+
+This will create:
+- **12 tax liens** with varied statuses, amounts, and dates
+- **4 redemption deadlines** at different intervals
+- **Payment records** for redeemed liens
+
+**Sample output:**
+```
+====================================================================
+LienOS Mock Data Loader
+====================================================================
+
+Project ID: valid-perigee-480016-f3
+Tenant ID: demo-user
+
+📦 Initializing Firestore connection...
+✓ Connected to Firestore
+
+🏠 Generating mock lien data...
+📝 Creating 12 liens...
+  ✓ [ 1/12] MI-2024-1000          - $ 8,500 (ACTIVE)
+  ✓ [ 2/12] BR-2024-1001          - $12,000 (ACTIVE)
+  ...
+  💰 [11/12] BR-2023-1010          - $ 7,800 (REDEEMED)
+  💰 [12/12] PA-2023-1011          - $ 3,500 (REDEEMED)
+
+✓ Created 12 liens
+
+⏰ Creating deadlines...
+  ⏰ [1/4] redemption              - Due in  30 days
+  ⏰ [2/4] notice_required         - Due in  60 days
+  ⏰ [3/4] interest_calculation    - Due in  90 days
+  ⏰ [4/4] annual_review           - Due in 120 days
+
+✓ Created 4 deadlines
+
+💵 Creating payment records for redeemed liens...
+  💰 [1/2] Redemption payment: $ 8,234.52
+  💰 [2/2] Redemption payment: $ 3,789.33
+
+✓ Created 2 payment records
+
+====================================================================
+📊 SUMMARY
+====================================================================
+
+✓ Loaded 12 total liens
+  • 10 ACTIVE liens
+  • 2 REDEEMED liens
+  • Total invested: $87,500.00
+
+✓ Loaded 4 deadlines
+✓ Loaded 2 payment records
+
+🎉 Mock data successfully loaded for tenant 'demo-user'!
+```
+
+**Access the data:**
+- Set `X-Tenant-ID: demo-user` header in API requests
+- View in Swagger UI: https://lien-os-402756129398.us-central1.run.app/docs
+- Query in frontend with matching tenant ID
+
 ---
 
 ## API Documentation
