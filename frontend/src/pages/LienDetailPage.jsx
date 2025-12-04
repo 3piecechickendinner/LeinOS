@@ -5,6 +5,7 @@ import { ArrowLeft, FileText, Calendar, DollarSign, MapPin } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { InterestCalculator } from '../components/liens/InterestCalculator';
+import { RecordPaymentModal } from '../components/liens/RecordPaymentModal';
 import apiClient from '../api/client';
 
 export function LienDetailPage() {
@@ -13,27 +14,44 @@ export function LienDetailPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [suggestedAmount, setSuggestedAmount] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      try {
-        const [lienData, paymentsData] = await Promise.all([
-          apiClient.getLien(id),
-          apiClient.getPayments(id).catch(() => []),
-        ]);
-        setLien(lienData);
-        setPayments(paymentsData);
-      } catch (err) {
-        setError(err.message || 'Failed to load lien details');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchData();
   }, [id]);
+
+  async function fetchData() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [lienData, paymentsData] = await Promise.all([
+        apiClient.getLien(id),
+        apiClient.getPayments(id).catch(() => []),
+      ]);
+      setLien(lienData);
+      setPayments(paymentsData);
+    } catch (err) {
+      setError(err.message || 'Failed to load lien details');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handlePaymentSuccess = async () => {
+    setSuccessMessage('Payment recorded successfully!');
+    await fetchData();
+
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000);
+  };
+
+  const handleRecordPaymentClick = () => {
+    setIsPaymentModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -59,6 +77,13 @@ export function LienDetailPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Success message */}
+      {successMessage && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-sm text-green-600">{successMessage}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
@@ -153,7 +178,13 @@ export function LienDetailPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Payment History</CardTitle>
-                <Button size="sm" variant="secondary">Record Payment</Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleRecordPaymentClick}
+                >
+                  Record Payment
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -162,30 +193,41 @@ export function LienDetailPage() {
                   No payments recorded
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left text-xs font-medium text-slate-600 px-4 py-2">Date</th>
-                      <th className="text-right text-xs font-medium text-slate-600 px-4 py-2">Amount</th>
-                      <th className="text-left text-xs font-medium text-slate-600 px-4 py-2">Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.map((payment, index) => (
-                      <tr key={index} className="border-b border-slate-100 last:border-0">
-                        <td className="px-4 py-2 text-sm text-slate-900">
-                          {payment.date ? format(new Date(payment.date), 'MMM d, yyyy') : '-'}
-                        </td>
-                        <td className="text-right px-4 py-2 text-sm font-medium text-slate-900">
-                          ${(payment.amount || 0).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-slate-600">
-                          {payment.type || 'Payment'}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left text-xs font-medium text-slate-600 px-4 py-2">Date</th>
+                        <th className="text-right text-xs font-medium text-slate-600 px-4 py-2">Amount</th>
+                        <th className="text-left text-xs font-medium text-slate-600 px-4 py-2 hidden sm:table-cell">Method</th>
+                        <th className="text-left text-xs font-medium text-slate-600 px-4 py-2 hidden md:table-cell">Payer</th>
+                        <th className="text-left text-xs font-medium text-slate-600 px-4 py-2 hidden lg:table-cell">Notes</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {payments.map((payment, index) => (
+                        <tr key={index} className="border-b border-slate-100 last:border-0">
+                          <td className="px-4 py-2 text-sm text-slate-900">
+                            {payment.payment_date ? format(new Date(payment.payment_date), 'MMM d, yyyy') :
+                             payment.date ? format(new Date(payment.date), 'MMM d, yyyy') : '-'}
+                          </td>
+                          <td className="text-right px-4 py-2 text-sm font-medium text-slate-900">
+                            ${(payment.amount || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-slate-600 hidden sm:table-cell">
+                            {payment.payment_method || payment.type || '-'}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-slate-600 hidden md:table-cell">
+                            {payment.payer_name || '-'}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-slate-600 hidden lg:table-cell max-w-xs truncate">
+                            {payment.notes || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -217,6 +259,15 @@ export function LienDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        lienId={id}
+        suggestedAmount={suggestedAmount}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }
