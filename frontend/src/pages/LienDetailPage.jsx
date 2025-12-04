@@ -120,8 +120,8 @@ export function LienDetailPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <InfoItem
                   icon={DollarSign}
-                  label="Face Value"
-                  value={`$${(lien.face_value || 0).toLocaleString()}`}
+                  label="Purchase Amount"
+                  value={`$${(lien.purchase_amount || 0).toLocaleString()}`}
                 />
                 <InfoItem
                   label="Interest Rate"
@@ -195,7 +195,7 @@ export function LienDetailPage() {
         <div className="space-y-6">
           <InterestCalculator
             lienId={id}
-            faceValue={lien.face_value || 0}
+            faceValue={lien.purchase_amount || 0}
             interestRate={lien.interest_rate || 0}
           />
 

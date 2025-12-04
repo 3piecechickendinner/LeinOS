@@ -5,6 +5,7 @@ REST API exposing all agent capabilities for tax lien management.
 """
 
 import os
+import logging
 from typing import Dict, Any, List, Optional
 from datetime import date
 from decimal import Decimal
@@ -13,6 +14,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from core.storage import FirestoreClient
 from agents.interest_calculator.agent import InterestCalculatorAgent
@@ -437,6 +442,8 @@ async def list_liens(
 ):
     """List all liens with optional filters"""
     try:
+        logger.info(f"GET /api/liens called with tenant_id={tenant_id}, status={status}, county={county}, limit={limit}")
+
         agent = LienTrackerAgent(storage=storage)
 
         parameters = {
@@ -453,9 +460,55 @@ async def list_liens(
             task="list_liens",
             parameters=parameters
         )
+
+        # Log result details
+        if isinstance(result, dict):
+            lien_count = result.get('count', 0) if 'count' in result else len(result.get('liens', []))
+            logger.info(f"list_liens result: {lien_count} liens returned, keys={list(result.keys())}")
+        else:
+            logger.info(f"list_liens result type: {type(result)}")
+
         # Return data directly for consistent frontend consumption
         return result
     except Exception as e:
+        logger.error(f"Error in list_liens: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/liens/debug/count", tags=["Lien Tracker"])
+async def debug_liens_count(tenant_id: str = Depends(get_tenant_id)):
+    """Debug endpoint to check total liens count and Firestore connection"""
+    try:
+        logger.info(f"Debug count endpoint called for tenant_id={tenant_id}")
+
+        # Direct Firestore query to count documents
+        liens_ref = storage.db.collection("liens")
+        query = liens_ref.where("tenant_id", "==", tenant_id)
+        docs = query.stream()
+
+        count = 0
+        sample_liens = []
+        for doc in docs:
+            count += 1
+            if count <= 3:  # Get first 3 as samples
+                data = doc.to_dict()
+                sample_liens.append({
+                    "id": doc.id,
+                    "certificate_number": data.get("certificate_number"),
+                    "status": data.get("status"),
+                    "tenant_id": data.get("tenant_id")
+                })
+
+        logger.info(f"Direct Firestore query found {count} liens for tenant_id={tenant_id}")
+
+        return {
+            "tenant_id": tenant_id,
+            "total_count": count,
+            "project_id": storage.project_id,
+            "sample_liens": sample_liens
+        }
+    except Exception as e:
+        logger.error(f"Error in debug count: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

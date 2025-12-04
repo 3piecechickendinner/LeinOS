@@ -134,7 +134,7 @@ export function DashboardPage() {
                         </Link>
                       </td>
                       <td className="text-right text-sm text-slate-900 px-4 py-2">
-                        ${(lien.face_value || 0).toLocaleString()}
+                        ${(lien.purchase_amount || 0).toLocaleString()}
                       </td>
                       <td className="text-right px-4 py-2">
                         <StatusBadge status={lien.status} />

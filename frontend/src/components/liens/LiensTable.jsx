@@ -72,7 +72,7 @@ export function LiensTable({ liens = [], loading = false }) {
               </td>
               <td className="text-right px-4 py-3">
                 <span className="text-sm font-medium text-slate-900">
-                  ${(lien.face_value || 0).toLocaleString()}
+                  ${(lien.purchase_amount || 0).toLocaleString()}
                 </span>
               </td>
               <td className="text-right px-4 py-3">
