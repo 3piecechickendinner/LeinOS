@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, FileText, Calendar, DollarSign, MapPin } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, DollarSign, MapPin, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Input, Select } from '../components/ui/Input';
 import { InterestCalculator } from '../components/liens/InterestCalculator';
 import { RecordPaymentModal } from '../components/liens/RecordPaymentModal';
 import apiClient from '../api/client';
@@ -17,6 +18,10 @@ export function LienDetailPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [suggestedAmount, setSuggestedAmount] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -53,6 +58,60 @@ export function LienDetailPage() {
     setIsPaymentModalOpen(true);
   };
 
+  const handleEditClick = () => {
+    setIsEditMode(true);
+    setEditFormData({
+      property_address: lien.property_address || '',
+      parcel_id: lien.parcel_id || '',
+      county: lien.county || '',
+      state: lien.state || 'FL',
+      status: lien.status || 'ACTIVE',
+    });
+    setEditError('');
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditFormData({});
+    setEditError('');
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    setEditError('');
+    setSaveLoading(true);
+
+    try {
+      const updateData = {
+        property_address: editFormData.property_address.trim(),
+        parcel_id: editFormData.parcel_id.trim(),
+        county: editFormData.county.trim(),
+        state: editFormData.state.trim(),
+        status: editFormData.status,
+      };
+
+      await apiClient.updateLien(id, updateData);
+
+      setSuccessMessage('Lien updated successfully!');
+      setIsEditMode(false);
+      await fetchData();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+    } catch (err) {
+      console.error('Failed to update lien:', err);
+      setEditError(err.message || 'Failed to update lien. Please try again.');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -84,6 +143,13 @@ export function LienDetailPage() {
         </div>
       )}
 
+      {/* Edit error message */}
+      {editError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{editError}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
@@ -98,8 +164,37 @@ export function LienDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <StatusBadge status={lien.status} />
-          <Button size="sm" variant="secondary" className="flex-1 sm:flex-none min-h-[44px]">Edit</Button>
+          {!isEditMode && <StatusBadge status={lien.status} />}
+          {isEditMode ? (
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleCancelEdit}
+                disabled={saveLoading}
+                className="flex-1 sm:flex-none min-h-[44px]"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdit}
+                disabled={saveLoading}
+                className="flex-1 sm:flex-none min-h-[44px]"
+              >
+                {saveLoading ? 'Saving...' : 'Save'}
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleEditClick}
+              className="flex-1 sm:flex-none min-h-[44px]"
+            >
+              Edit
+            </Button>
+          )}
         </div>
       </div>
 
@@ -113,61 +208,118 @@ export function LienDetailPage() {
               <CardTitle>Property Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoItem
-                  icon={MapPin}
-                  label="Address"
-                  value={lien.property_address || 'N/A'}
-                />
-                <InfoItem
-                  icon={FileText}
-                  label="Parcel ID"
-                  value={lien.parcel_id || 'N/A'}
-                />
-                <InfoItem
-                  label="County"
-                  value={lien.county || 'N/A'}
-                />
-                <InfoItem
-                  label="State"
-                  value={lien.state || 'N/A'}
-                />
-              </div>
+              {isEditMode ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <Input
+                      label="Property Address"
+                      name="property_address"
+                      value={editFormData.property_address}
+                      onChange={handleEditChange}
+                      required
+                    />
+                  </div>
+                  <Input
+                    label="Parcel ID"
+                    name="parcel_id"
+                    value={editFormData.parcel_id}
+                    onChange={handleEditChange}
+                    required
+                  />
+                  <Input
+                    label="County"
+                    name="county"
+                    value={editFormData.county}
+                    onChange={handleEditChange}
+                    required
+                  />
+                  <Input
+                    label="State"
+                    name="state"
+                    value={editFormData.state}
+                    onChange={handleEditChange}
+                    placeholder="FL"
+                    maxLength={2}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InfoItem
+                    icon={MapPin}
+                    label="Address"
+                    value={lien.property_address || 'N/A'}
+                  />
+                  <InfoItem
+                    icon={FileText}
+                    label="Parcel ID"
+                    value={lien.parcel_id || 'N/A'}
+                  />
+                  <InfoItem
+                    label="County"
+                    value={lien.county || 'N/A'}
+                  />
+                  <InfoItem
+                    label="State"
+                    value={lien.state || 'N/A'}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Financial Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Financial Details</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Financial Details</CardTitle>
+                {isEditMode && (
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Read-only: Legal/financial records
+                  </p>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <InfoItem
+                <ReadOnlyInfoItem
+                  icon={DollarSign}
+                  label="Certificate Number"
+                  value={lien.certificate_number || 'N/A'}
+                  isEditMode={isEditMode}
+                  tooltip="Legal identifier - cannot be changed"
+                />
+                <ReadOnlyInfoItem
                   icon={DollarSign}
                   label="Purchase Amount"
                   value={`$${(lien.purchase_amount || 0).toLocaleString()}`}
+                  isEditMode={isEditMode}
+                  tooltip="Historical record - cannot be changed"
                 />
-                <InfoItem
+                <ReadOnlyInfoItem
                   label="Interest Rate"
                   value={`${(lien.interest_rate || 0).toFixed(2)}%`}
+                  isEditMode={isEditMode}
+                  tooltip="Set by county/state - cannot be changed"
                 />
-                <InfoItem
+                <ReadOnlyInfoItem
                   label="Premium"
                   value={`$${(lien.premium || 0).toLocaleString()}`}
+                  isEditMode={isEditMode}
                 />
-                <InfoItem
+                <ReadOnlyInfoItem
                   icon={Calendar}
-                  label="Purchase Date"
-                  value={lien.purchase_date ? format(new Date(lien.purchase_date), 'MMM d, yyyy') : 'N/A'}
+                  label="Sale Date"
+                  value={lien.sale_date ? format(new Date(lien.sale_date), 'MMM d, yyyy') :
+                         lien.purchase_date ? format(new Date(lien.purchase_date), 'MMM d, yyyy') : 'N/A'}
+                  isEditMode={isEditMode}
+                  tooltip="Historical record - cannot be changed"
                 />
-                <InfoItem
+                <ReadOnlyInfoItem
                   label="Redemption Deadline"
                   value={lien.redemption_deadline ? format(new Date(lien.redemption_deadline), 'MMM d, yyyy') : 'N/A'}
-                />
-                <InfoItem
-                  label="Tax Year"
-                  value={lien.tax_year || 'N/A'}
+                  isEditMode={isEditMode}
+                  tooltip="Calculated from sale date - cannot be changed"
                 />
               </div>
             </CardContent>
@@ -235,6 +387,37 @@ export function LienDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-4 md:space-y-6">
+          {/* Status Editor in Edit Mode */}
+          {isEditMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select
+                  label="Lien Status"
+                  name="status"
+                  value={editFormData.status}
+                  onChange={handleEditChange}
+                  options={
+                    lien.status === 'ACTIVE' ? [
+                      { value: 'ACTIVE', label: 'Active' },
+                      { value: 'EXPIRED', label: 'Expired' },
+                      { value: 'FORECLOSED', label: 'Foreclosed' },
+                    ] : [
+                      { value: lien.status, label: lien.status.charAt(0) + lien.status.slice(1).toLowerCase() },
+                    ]
+                  }
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  {lien.status === 'ACTIVE'
+                    ? 'You can change status to Expired or Foreclosed'
+                    : 'Status cannot be changed from ' + lien.status}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <InterestCalculator
             lienId={id}
             faceValue={lien.purchase_amount || 0}
@@ -242,21 +425,23 @@ export function LienDetailPage() {
           />
 
           {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="secondary" size="sm" className="w-full justify-start">
-                <FileText className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-              <Button variant="secondary" size="sm" className="w-full justify-start">
-                <Calendar className="h-4 w-4 mr-2" />
-                Set Deadline Reminder
-              </Button>
-            </CardContent>
-          </Card>
+          {!isEditMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="secondary" size="sm" className="w-full justify-start">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+                <Button variant="secondary" size="sm" className="w-full justify-start">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Set Deadline Reminder
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -278,6 +463,38 @@ function InfoItem({ icon: Icon, label, value }) {
       <p className="text-xs font-medium text-slate-600 flex items-center gap-1">
         {Icon && <Icon className="h-3 w-3" />}
         {label}
+      </p>
+      <p className="mt-0.5 text-sm text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function ReadOnlyInfoItem({ icon: Icon, label, value, isEditMode, tooltip }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className={isEditMode ? 'opacity-60' : ''}>
+      <p className="text-xs font-medium text-slate-600 flex items-center gap-1">
+        {Icon && <Icon className="h-3 w-3" />}
+        {label}
+        {isEditMode && tooltip && (
+          <div className="relative inline-block">
+            <button
+              type="button"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              onClick={() => setShowTooltip(!showTooltip)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <Info className="h-3 w-3" />
+            </button>
+            {showTooltip && (
+              <div className="absolute z-10 bottom-full left-0 mb-1 w-48 p-2 text-xs text-white bg-slate-800 rounded shadow-lg">
+                {tooltip}
+              </div>
+            )}
+          </div>
+        )}
       </p>
       <p className="mt-0.5 text-sm text-slate-900">{value}</p>
     </div>

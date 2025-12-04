@@ -7,6 +7,7 @@ import LienDetailPage from './pages/LienDetailPage';
 import AddLienPage from './pages/AddLienPage';
 import NotificationsPage from './pages/NotificationsPage';
 import DeadlinesPage from './pages/DeadlinesPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -18,17 +19,9 @@ function App() {
         <Route path="liens/:id" element={<LienDetailPage />} />
         <Route path="deadlines" element={<DeadlinesPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
-  );
-}
-
-function PlaceholderPage({ title }) {
-  return (
-    <div className="flex items-center justify-center h-full">
-      <p className="text-slate-500">{title} page coming soon</p>
-    </div>
   );
 }
 
