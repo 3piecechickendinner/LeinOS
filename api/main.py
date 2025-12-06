@@ -36,6 +36,9 @@ from agents.document_generator.agent import DocumentGeneratorAgent
 # Load environment variables from .env file
 load_dotenv()
 
+# Load API Secret for authentication
+API_SECRET = os.getenv("ASSET_OS_SECRET")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="LienOS API",
@@ -263,11 +266,22 @@ class DocumentResponse(BaseModel):
 # Dependency: Tenant Authentication
 # =============================================================================
 
-async def get_tenant_id(x_tenant_id: str = Header(..., description="Tenant ID for authentication")) -> str:
+async def get_tenant_id(
+    x_tenant_id: str = Header(..., description="Tenant ID for authentication"),
+    x_auth_secret: Optional[str] = Header(None, alias="X-Auth-Secret")
+) -> str:
     """
     Extract and validate tenant ID from header.
-    In production, this would verify against an auth service.
+    Validates API secret if ASSET_OS_SECRET is set in environment.
     """
+    # Validate API Secret if configured
+    if API_SECRET:
+        if not x_auth_secret or x_auth_secret != API_SECRET:
+            raise HTTPException(status_code=401, detail="Invalid API Secret")
+    else:
+        logger.warning("Running in unsecured mode - ASSET_OS_SECRET not set")
+    
+    # Validate tenant ID
     if not x_tenant_id or len(x_tenant_id) < 3:
         raise HTTPException(status_code=401, detail="Invalid or missing X-Tenant-ID header")
     return x_tenant_id

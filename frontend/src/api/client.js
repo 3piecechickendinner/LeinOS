@@ -9,6 +9,9 @@ const DEFAULT_TENANT = 'demo-user';
 // Note: Notifications and Deadlines have mock fallbacks regardless of this setting
 const USE_MOCK_DATA = false;
 
+// Load API Secret for authentication
+const API_SECRET = import.meta.env.VITE_API_SECRET || '';
+
 // Mock data for demos and screenshots
 const mockData = {
   portfolioStats: {
@@ -264,6 +267,7 @@ class ApiClient {
     const headers = {
       'Content-Type': 'application/json',
       'X-Tenant-ID': this.tenantId,
+      'X-Auth-Secret': API_SECRET,
       ...options.headers,
     };
 
