@@ -9,17 +9,19 @@ import AddAssetPage from './pages/AddAssetPage';
 import NotificationsPage from './pages/NotificationsPage';
 import DeadlinesPage from './pages/DeadlinesPage';
 import SettingsPage from './pages/SettingsPage';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
     <VerticalProvider>
       <Routes>
-        <Route path="/" element={<AppLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="assets" element={<AssetsListPage />} />
           <Route path="assets/new" element={<AddAssetPage />} />
           <Route path="assets/:id" element={<LienDetailPage />} />
-          <Route path="liens" element={<Navigate to="/assets" replace />} />
+          <Route path="liens" element={<Navigate to="/app/assets" replace />} />
           <Route path="deadlines" element={<DeadlinesPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="settings" element={<SettingsPage />} />

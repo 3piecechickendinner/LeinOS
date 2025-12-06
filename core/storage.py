@@ -266,15 +266,13 @@ class FirestoreClient:
         }
 
     def _sanitize_data(self, data: Any) -> Any:
-        """
-        Recursively convert Decimal to float for Firestore compatibility.
-        """
+        """Recursively convert Decimal to float for Firestore compatibility."""
+        if isinstance(data, Decimal):
+            return float(data)
         if isinstance(data, dict):
             return {k: self._sanitize_data(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            return [self._sanitize_data(v) for v in data]
-        elif isinstance(data, Decimal):
-            return float(data)
+        if isinstance(data, list):
+            return [self._sanitize_data(i) for i in data]
         return data
 
     async def create(
@@ -314,15 +312,13 @@ class FirestoreClient:
         data["created_at"] = now
         data["updated_at"] = now
         
-        # Sanitize data (convert Decimals)
-        data = self._sanitize_data(data)
-
         # Get collection reference
         collection_ref = self.db.collection(self.collections.get(collection_name, collection_name))
 
         # Create document (run in thread pool since Firestore client is synchronous)
         loop = asyncio.get_event_loop()
         doc_ref = collection_ref.document(doc_id)
+        data = self._sanitize_data(data)
         await loop.run_in_executor(None, doc_ref.set, data)
 
         return doc_id
@@ -413,9 +409,9 @@ class FirestoreClient:
         collection_ref = self.db.collection(self.collections.get(collection_name, collection_name))
 
         # Update document (run in thread pool since Firestore client is synchronous)
-        updates = self._sanitize_data(updates)
         loop = asyncio.get_event_loop()
         doc_ref = collection_ref.document(doc_id)
+        updates = self._sanitize_data(updates)
         await loop.run_in_executor(None, doc_ref.update, updates)
 
         return True

@@ -9,20 +9,22 @@ import {
   LogOut,
   Menu,
   X,
-  Layers
+  Layers,
+  Home
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useVertical } from '../context/VerticalContext';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Assets', href: '/assets', icon: FileText },
-  { name: 'Deadlines', href: '/deadlines', icon: Calendar },
-  { name: 'Notifications', href: '/notifications', icon: Bell, showBadge: true },
+  { name: 'Dashboard', href: '/app', icon: LayoutDashboard },
+  { name: 'Assets', href: '/app/assets', icon: FileText },
+  { name: 'Deadlines', href: '/app/deadlines', icon: Calendar },
+  { name: 'Notifications', href: '/app/notifications', icon: Bell, showBadge: true },
 ];
 
 const bottomNav = [
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Settings', href: '/app/settings', icon: Settings },
 ];
 
 function SidebarLink({ item, unreadCount, onClick }) {
@@ -93,7 +95,9 @@ export function AppLayout() {
       >
         {/* Logo */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-slate-200">
-          <span className="text-lg font-bold text-slate-900">AssetOS</span>
+          <Link to="/" className="text-lg font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+            AssetOS
+          </Link>
           <button
             onClick={() => setMobileMenuOpen(false)}
             className="md:hidden p-2 text-slate-400 hover:text-slate-600 transition-colors"
@@ -116,6 +120,11 @@ export function AppLayout() {
 
         {/* Bottom navigation */}
         <div className="px-3 py-4 border-t border-slate-200 space-y-1">
+          <SidebarLink
+            item={{ name: 'Back to Home', href: '/', icon: Home }}
+            unreadCount={0}
+            onClick={() => setMobileMenuOpen(false)}
+          />
           {bottomNav.map((item) => (
             <SidebarLink
               key={item.name}
