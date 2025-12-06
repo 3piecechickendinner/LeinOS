@@ -153,59 +153,35 @@ class LienOSBaseAgent(ABC):
     
 
     async def run(
-
         self,
-
         tenant_id: str,
-
         task: str,
-
         parameters: Optional[Dict[str, Any]] = None,
-
-        lien_ids: Optional[List[str]] = None
-
+        lien_ids: Optional[List[str]] = None,
+        asset_ids: Optional[List[str]] = None
     ) -> Dict[str, Any]:
-
         """
-
         Public interface to run the agent.
-
         Handles logging and error handling.
-
         
-
         Args:
-
             tenant_id: Tenant identifier
-
             task: What to do (e.g., "calculate_interest")
-
             parameters: Additional parameters
-
             lien_ids: List of lien IDs to process
-
+            asset_ids: List of asset IDs to process
             
-
         Returns:
-
             Result dictionary
-
         """
-
         context = AgentContext(
-
             tenant_id=tenant_id,
-
             requesting_agent="user",
-
             task=task,
-
             lien_ids=lien_ids or [],
-
+            asset_ids=asset_ids or [],
             parameters=parameters or {},
-
             timestamp=datetime.utcnow()
-
         )
 
         

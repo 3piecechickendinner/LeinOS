@@ -7,7 +7,7 @@ const DEFAULT_TENANT = 'demo-user';
 // Toggle for demo mode with mock data
 // Set to false to use real API even in development
 // Note: Notifications and Deadlines have mock fallbacks regardless of this setting
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 // Mock data for demos and screenshots
 const mockData = {
@@ -225,6 +225,29 @@ const mockData = {
       { date: '2024-06-22', amount: 4025, type: 'Redemption' },
     ],
   },
+
+  judgments: [
+    {
+      id: 'judgment-001',
+      case_number: 'CASE-2024-001',
+      court_name: 'Circuit Court',
+      judgment_date: '2024-01-15',
+      defendant_name: 'John Doe',
+      judgment_amount: 5000.00,
+      county: 'Miami-Dade',
+      status: 'ACTIVE'
+    },
+    {
+      id: 'judgment-002',
+      case_number: 'CASE-2024-002',
+      court_name: 'County Court',
+      judgment_date: '2024-02-20',
+      defendant_name: 'Jane Smith',
+      judgment_amount: 2500.50,
+      county: 'Broward',
+      status: 'SATISFIED'
+    }
+  ]
 };
 
 class ApiClient {
@@ -255,6 +278,29 @@ class ApiClient {
     }
 
     return response.json();
+  }
+
+  // Universal Asset Fetcher
+  async getAssets(vertical, params = {}) {
+    if (USE_MOCK_DATA) return [];
+
+    const endpoints = {
+      tax_lien: '/liens',
+      civil_judgment: '/judgments',
+      probate: '/probate',
+      mineral_rights: '/minerals',
+      surplus_funds: '/surplus'
+    };
+
+    const endpoint = endpoints[vertical] || '/liens';
+    const queryString = new URLSearchParams(params).toString();
+    const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
+
+    const response = await this.request(url);
+
+    // Handle wrapped responses like { liens: [...] } or { data: [...] }
+    if (Array.isArray(response)) return response;
+    return response.liens || response.judgments || response.items || response.data || [];
   }
 
   // Liens
@@ -300,6 +346,8 @@ class ApiClient {
     return this.request(`/liens/${lienId}`);
   }
 
+
+
   async createLien(data) {
     if (USE_MOCK_DATA) {
       const newLien = { id: `lien-${Date.now()}`, ...data };
@@ -335,9 +383,123 @@ class ApiClient {
     return this.request(`/liens/${lienId}`, {
       method: 'DELETE',
     });
+    return this.request(`/liens/${lienId}`, {
+      method: 'DELETE',
+    });
   }
 
-  // Interest calculation
+  // Judgments
+  async listJudgments(params = {}) {
+    if (USE_MOCK_DATA) {
+      let judgments = [...mockData.judgments];
+      if (params.status && params.status !== 'all') {
+        judgments = judgments.filter(j => j.status === params.status);
+      }
+      if (params.limit) {
+        judgments = judgments.slice(0, parseInt(params.limit));
+      }
+      return judgments;
+    }
+    const queryString = new URLSearchParams(params).toString();
+    const response = await this.request(`/judgments${queryString ? `?${queryString}` : ''}`);
+
+    // Handle API response format
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) return response;
+      if (Array.isArray(response.judgments)) return response.judgments;
+      if (Array.isArray(response.data?.judgments)) return response.data.judgments;
+    }
+    return [];
+  }
+
+  async createJudgment(data) {
+    if (USE_MOCK_DATA) {
+      const newJudgment = { id: `judgment-${Date.now()}`, ...data };
+      mockData.judgments.push(newJudgment);
+      return newJudgment;
+    }
+    return this.request('/judgments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Probate methods
+  async createProbate(probateData) {
+    const response = await fetch(`${API_BASE}/probate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-ID': this.tenantId,
+      },
+      body: JSON.stringify(probateData),
+    });
+    if (!response.ok) throw new Error('Failed to create probate');
+    return response.json();
+  }
+
+  async listProbate(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString();
+    const response = await fetch(`${API_BASE}/probate?${queryParams}`, {
+      headers: {
+        'X-Tenant-ID': this.tenantId,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to list probate');
+    return response.json();
+  }
+
+  // Mineral Rights methods
+  async createMineral(mineralData) {
+    const response = await fetch(`${API_BASE}/minerals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-ID': this.tenantId,
+      },
+      body: JSON.stringify(mineralData),
+    });
+    if (!response.ok) throw new Error('Failed to create mineral right');
+    return response.json();
+  }
+
+  async listMinerals(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString();
+    const response = await fetch(`${API_BASE}/minerals?${queryParams}`, {
+      headers: {
+        'X-Tenant-ID': this.tenantId,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to list minerals');
+    return response.json();
+  }
+
+  // Surplus Funds methods
+  async createSurplus(surplusData) {
+    const response = await fetch(`${API_BASE}/surplus`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-ID': this.tenantId,
+      },
+      body: JSON.stringify(surplusData),
+    });
+    if (!response.ok) throw new Error('Failed to create surplus fund');
+    return response.json();
+  }
+
+  async listSurplus(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString();
+    const response = await fetch(`${API_BASE}/surplus?${queryParams}`, {
+      headers: {
+        'X-Tenant-ID': this.tenantId,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to list surplus funds');
+    return response.json();
+  }
+
+  // Interest Calculator methods
   async calculateInterest(lienId) {
     if (USE_MOCK_DATA) {
       const lien = mockData.liens.find(l => l.id === lienId);

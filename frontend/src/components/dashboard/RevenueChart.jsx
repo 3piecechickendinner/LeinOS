@@ -1,71 +1,101 @@
 import React from 'react';
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
+  ResponsiveContainer
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 
-const defaultData = [
-  { month: 'Jan', revenue: 4000, interest: 2400 },
-  { month: 'Feb', revenue: 3000, interest: 1398 },
-  { month: 'Mar', revenue: 2000, interest: 9800 },
-  { month: 'Apr', revenue: 2780, interest: 3908 },
-  { month: 'May', revenue: 1890, interest: 4800 },
-  { month: 'Jun', revenue: 2390, interest: 3800 },
-];
+export function RevenueChart({ currentVertical }) {
+  // 1. DYNAMIC DATA GENERATOR
+  const getChartData = () => {
+    switch (currentVertical) {
+      case 'civil_judgment':
+        return [
+          { name: 'Jan', value: 12000 }, { name: 'Feb', value: 19000 },
+          { name: 'Mar', value: 15000 }, { name: 'Apr', value: 22000 },
+          { name: 'May', value: 28000 }, { name: 'Jun', value: 25000 },
+        ];
+      case 'mineral_rights':
+        return [
+          { name: 'Jan', value: 4500 }, { name: 'Feb', value: 5200 },
+          { name: 'Mar', value: 4800 }, { name: 'Apr', value: 6100 },
+          { name: 'May', value: 5900 }, { name: 'Jun', value: 7200 },
+        ];
+      case 'probate':
+        return [
+          { name: 'Jan', value: 0 }, { name: 'Feb', value: 150000 },
+          { name: 'Mar', value: 0 }, { name: 'Apr', value: 0 },
+          { name: 'May', value: 210000 }, { name: 'Jun', value: 0 },
+        ];
+      case 'surplus_funds':
+        return [
+          { name: 'Jan', value: 8500 }, { name: 'Feb', value: 2000 },
+          { name: 'Mar', value: 12000 }, { name: 'Apr', value: 5000 },
+          { name: 'May', value: 18000 }, { name: 'Jun', value: 9000 },
+        ];
+      default: // tax_lien
+        return [
+          { name: 'Jan', value: 4000 }, { name: 'Feb', value: 3000 },
+          { name: 'Mar', value: 2000 }, { name: 'Apr', value: 2780 },
+          { name: 'May', value: 1890 }, { name: 'Jun', value: 2390 },
+        ];
+    }
+  };
 
-export function RevenueChart({ data = defaultData, title = 'Revenue & Interest' }) {
+  // 2. DYNAMIC TITLES
+  const getTitle = () => {
+    const titles = {
+      civil_judgment: 'Monthly Collections (Garnishments)',
+      mineral_rights: 'Royalty Income Stream',
+      probate: 'Estate Liquidation Events',
+      surplus_funds: 'Recovered Surplus Fees',
+      tax_lien: 'Redemption Revenue'
+    };
+    return titles[currentVertical] || 'Revenue';
+  };
+
+  const data = getChartData();
+
   return (
-    <Card>
+    <Card className="col-span-1">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle>{getTitle()}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-64">
+        <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
-                dataKey="month"
-                tick={{ fontSize: 12, fill: '#64748b' }}
-                axisLine={{ stroke: '#e2e8f0' }}
+                dataKey="name"
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis
-                tick={{ fontSize: 12, fill: '#64748b' }}
-                axisLine={{ stroke: '#e2e8f0' }}
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
                 tickFormatter={(value) => `$${value}`}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                }}
-                formatter={(value) => [`$${value}`, '']}
+                cursor={{ fill: 'transparent' }}
+                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stackId="1"
-                stroke="#3b82f6"
-                fill="#93c5fd"
-                name="Revenue"
+              <Bar
+                dataKey="value"
+                fill="#2563eb"
+                radius={[4, 4, 0, 0]}
+                barSize={40}
               />
-              <Area
-                type="monotone"
-                dataKey="interest"
-                stackId="1"
-                stroke="#10b981"
-                fill="#6ee7b7"
-                name="Interest"
-              />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

@@ -42,6 +42,7 @@ from agents.lien_tracker.agent import LienTrackerAgent
 from agents.communication.agent import CommunicationAgent
 from agents.portfolio_dashboard.agent import PortfolioDashboardAgent
 from agents.document_generator.agent import DocumentGeneratorAgent
+from agents.judgment_tracker.agent import JudgmentTrackerAgent
 from core.storage import FirestoreClient
 
 # Storage will be initialized lazily
@@ -386,6 +387,38 @@ def list_liens(status: Optional[str] = None, county: Optional[str] = None, limit
         return f"Error listing liens: {str(e)}"
 
 
+def list_judgments(status: Optional[str] = None, county: Optional[str] = None, limit: int = 50) -> str:
+    """List all civil judgments with optional filters.
+
+    Args:
+        status: Filter by judgment status (ACTIVE, SATISFIED, etc.)
+        county: Filter by county name
+        limit: Maximum number of judgments to return (default 50)
+
+    Returns:
+        List of judgments matching the criteria
+    """
+    try:
+        storage = _get_storage()
+        agent = JudgmentTrackerAgent(storage=storage)
+        parameters = {"limit": limit, "order_by": "created_at"}
+        if status:
+            parameters["status"] = status
+        if county:
+            parameters["county"] = county
+
+        result = _run_async(
+            agent.run(
+                tenant_id="system",
+                task="list_judgments",
+                parameters=parameters
+            )
+        )
+        return f"Judgments found:\n{result}"
+    except Exception as e:
+        return f"Error listing judgments: {str(e)}"
+
+
 def get_portfolio_summary() -> str:
     """Get comprehensive portfolio summary with analytics.
 
@@ -524,6 +557,10 @@ def list_available_agents() -> str:
    - Produce tax forms (1099-INT)
    - Generate portfolio reports
 
+8. Judgment Tracker Agent
+    - Create, read, update, delete civil judgments
+    - Search and filter judgment records
+
 Use these agents by asking me natural questions like:
 - "Calculate interest for lien_2024-001_20240115120000"
 - "List all active liens in Miami-Dade county"
@@ -562,7 +599,9 @@ You have access to specialized agents through these tools. Always use the approp
 - check_redemption_deadlines() - for deadline monitoring
 - get_portfolio_summary() - for portfolio analytics
 - send_notification() - for alerts and messages
+- send_notification() - for alerts and messages
 - generate_redemption_notice() - for legal documents
+- list_judgments() - for searching judgments
 - list_available_agents() - to show what you can do
 
 When users ask general questions about capabilities, use list_available_agents(). When they request specific actions, use the appropriate specialized tool.""",
@@ -573,7 +612,9 @@ When users ask general questions about capabilities, use list_available_agents()
         list_liens,
         get_portfolio_summary,
         send_notification,
+        send_notification,
         generate_redemption_notice,
+        list_judgments,
         list_available_agents,
     ],
 )

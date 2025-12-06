@@ -8,6 +8,15 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict, field_serializer
 
 
+class AssetType(str, Enum):
+    """Type of asset."""
+    TAX_LIEN = "TAX_LIEN"
+    CIVIL_JUDGMENT = "CIVIL_JUDGMENT"
+    PROBATE = "PROBATE"
+    MINERAL_RIGHT = "MINERAL_RIGHT"
+    SURPLUS_FUND = "SURPLUS_FUND"
+
+
 class LienStatus(str, Enum):
     """Status of a tax lien."""
     ACTIVE = "ACTIVE"
@@ -41,21 +50,17 @@ class DocumentType(str, Enum):
     TAX_FORM = "TAX_FORM"
 
 
-class Lien(BaseModel):
-    """Tax lien model."""
-    lien_id: str = Field(..., description="Unique identifier for the lien")
+class Asset(BaseModel):
+    """Base model for all assets."""
+    asset_id: str = Field(..., description="Unique identifier for the asset")
     tenant_id: str = Field(..., description="Tenant identifier for multi-tenancy")
-    certificate_number: str = Field(..., description="Tax lien certificate number")
-    purchase_amount: Decimal = Field(..., description="Amount paid to purchase the lien")
+    asset_type: AssetType = Field(..., description="Type of asset")
+    purchase_amount: Decimal = Field(..., description="Amount paid to purchase the asset")
     interest_rate: Decimal = Field(..., description="Interest rate as a percentage")
-    sale_date: date = Field(..., description="Date the lien was sold")
-    redemption_deadline: date = Field(..., description="Deadline for redemption")
-    status: LienStatus = Field(..., description="Current status of the lien")
-    county: str = Field(..., description="County where the property is located")
-    property_address: str = Field(..., description="Address of the property")
-    parcel_id: str = Field(..., description="Parcel identifier")
-    created_at: datetime = Field(..., description="Timestamp when the lien was created")
-    updated_at: datetime = Field(..., description="Timestamp when the lien was last updated")
+    status: str = Field(..., description="Current status of the asset")
+    county: str = Field(..., description="County where the asset is located")
+    created_at: datetime = Field(..., description="Timestamp when the asset was created")
+    updated_at: datetime = Field(..., description="Timestamp when the asset was last updated")
 
     model_config = ConfigDict(
         json_encoders={
@@ -70,15 +75,56 @@ class Lien(BaseModel):
         """Serialize Decimal to float."""
         return float(value)
 
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, value: datetime, _info) -> str:
+        """Serialize datetime to ISO format string."""
+        return value.isoformat()
+
+
+class TaxLien(Asset):
+    """Tax lien model."""
+    asset_type: AssetType = Field(default=AssetType.TAX_LIEN, description="Type of asset")
+    certificate_number: str = Field(..., description="Tax lien certificate number")
+    sale_date: date = Field(..., description="Date the lien was sold")
+    redemption_deadline: date = Field(..., description="Deadline for redemption")
+    status: LienStatus = Field(..., description="Current status of the lien")
+    property_address: str = Field(..., description="Address of the property")
+    parcel_id: str = Field(..., description="Parcel identifier")
+
+    @property
+    def lien_id(self) -> str:
+        """Alias for asset_id for backward compatibility."""
+        return self.asset_id
+
     @field_serializer('sale_date', 'redemption_deadline')
     def serialize_date(self, value: date, _info) -> str:
         """Serialize date to ISO format string."""
         return value.isoformat()
 
-    @field_serializer('created_at', 'updated_at')
-    def serialize_datetime(self, value: datetime, _info) -> str:
-        """Serialize datetime to ISO format string."""
-        return value.isoformat()
+
+class CivilJudgment(Asset):
+    """Civil judgment model."""
+    asset_type: AssetType = Field(default=AssetType.CIVIL_JUDGMENT, description="Type of asset")
+    case_number: str = Field(..., description="Court case number")
+    court_name: str = Field(..., description="Name of the court")
+    judgment_date: date = Field(..., description="Date the judgment was issued")
+    defendant_name: str = Field(..., description="Name of the defendant")
+    judgment_amount: Decimal = Field(..., description="Total judgment amount")
+    statute_limitations_date: Optional[date] = Field(None, description="Date when the judgment expires or statute of limitations ends")
+
+    @field_serializer('judgment_date', 'statute_limitations_date')
+    def serialize_date(self, value: Optional[date], _info) -> Optional[str]:
+        """Serialize date to ISO format string."""
+        return value.isoformat() if value else None
+
+    @field_serializer('judgment_amount')
+    def serialize_decimal(self, value: Decimal, _info) -> float:
+        """Serialize Decimal to float."""
+        return float(value)
+
+
+# Alias for backward compatibility
+Lien = TaxLien
 
 
 class Payment(BaseModel):
@@ -157,6 +203,7 @@ class AgentContext(BaseModel):
     requesting_agent: str = Field(..., description="Identifier of the requesting agent")
     task: str = Field(..., description="Task description or identifier")
     lien_ids: Optional[List[str]] = Field(None, description="List of lien IDs relevant to the task")
+    asset_ids: Optional[List[str]] = Field(None, description="List of asset IDs relevant to the task")
     parameters: Dict[str, Any] = Field(default_factory=dict, description="Additional parameters for the task")
     response: Optional[Dict[str, Any]] = Field(None, description="Response data from the agent")
     error: Optional[str] = Field(None, description="Error message if task failed")

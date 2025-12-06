@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.1, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.13/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/sd/Desktop/lien-os
+configfile: pyproject.toml
+plugins: anyio-4.11.0, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_all_verticals.py _________________
+tests/test_all_verticals.py:15: in <module>
+    from agents.interest_calculator.agent import InterestCalculatorAgent
+agents/__init__.py:8: in <module>
+    from agents.mineral_tracker.agent import MineralTrackerAgent
+agents/mineral_tracker/agent.py:7: in <module>
+    from core.verticals.mineral import MineralRight
+core/verticals/mineral.py:8: in <module>
+    class MineralRight(Asset):
+core/verticals/mineral.py:15: in MineralRight
+    lease_expiration_date: Optional[date] = Field(None, description="Expiration date of the current lease")
+                                    ^^^^
+E   NameError: name 'date' is not defined
+=============================== warnings summary ===============================
+../../../../Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:319: 48 warnings
+  /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:319: PydanticDeprecatedSince20: `json_encoders` is deprecated. See https://docs.pydantic.dev/2.12/concepts/serialization/#custom-serializers for alternatives. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_all_verticals.py - NameError: name 'date' is not defined
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+======================== 48 warnings, 1 error in 0.85s =========================

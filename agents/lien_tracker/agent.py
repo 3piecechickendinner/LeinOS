@@ -106,7 +106,7 @@ class LienTrackerAgent(LienOSBaseAgent):
 
         # Create lien object
         lien = Lien(
-            lien_id=lien_id,
+            asset_id=lien_id,
             tenant_id=context.tenant_id,
             certificate_number=params["certificate_number"],
             purchase_amount=Decimal(str(params["purchase_amount"])),
@@ -123,6 +123,7 @@ class LienTrackerAgent(LienOSBaseAgent):
 
         # Save to storage
         lien_dict = lien.model_dump()
+        lien_dict["id"] = lien_id  # Ensure document ID matches asset_id
         await self.storage.create("liens", lien_dict, context.tenant_id)
 
         self.log_info(f"Created lien {lien_id} for {params['property_address']}")
@@ -244,7 +245,8 @@ class LienTrackerAgent(LienOSBaseAgent):
             }
 
         return {
-            "lien_id": lien_id,
+            "lien_id": lien_data.get("asset_id") or lien_data.get("lien_id"),
+            "asset_id": lien_data.get("asset_id"),
             "found": True,
             "certificate_number": lien_data.get("certificate_number"),
             "purchase_amount": lien_data.get("purchase_amount"),
@@ -301,7 +303,8 @@ class LienTrackerAgent(LienOSBaseAgent):
         results = []
         for lien in liens:
             results.append({
-                "lien_id": lien.get("lien_id"),
+                "lien_id": lien.get("asset_id") or lien.get("lien_id"),
+                "asset_id": lien.get("asset_id"),
                 "certificate_number": lien.get("certificate_number"),
                 "purchase_amount": lien.get("purchase_amount"),
                 "interest_rate": lien.get("interest_rate"),

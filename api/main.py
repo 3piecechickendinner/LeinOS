@@ -23,7 +23,12 @@ from core.storage import FirestoreClient
 from agents.interest_calculator.agent import InterestCalculatorAgent
 from agents.deadline_alert.agent import DeadlineAlertAgent
 from agents.payment_monitor.agent import PaymentMonitorAgent
+from agents.payment_monitor.agent import PaymentMonitorAgent
 from agents.lien_tracker.agent import LienTrackerAgent
+from agents.judgment_tracker.agent import JudgmentTrackerAgent
+from agents.probate_tracker.agent import ProbateTrackerAgent
+from agents.mineral_tracker.agent import MineralTrackerAgent
+from agents.surplus_tracker.agent import SurplusTrackerAgent
 from agents.communication.agent import CommunicationAgent
 from agents.portfolio_dashboard.agent import PortfolioDashboardAgent
 from agents.document_generator.agent import DocumentGeneratorAgent
@@ -155,6 +160,25 @@ class ListLiensRequest(BaseModel):
 class DeleteLienRequest(BaseModel):
     lien_id: str
     hard_delete: Optional[bool] = False
+
+
+# Judgment Tracker Models
+class CreateJudgmentRequest(BaseModel):
+    case_number: str
+    court_name: str
+    judgment_date: str
+    defendant_name: str
+    judgment_amount: float
+    county: str
+    status: Optional[str] = "ACTIVE"
+    asset_id: Optional[str] = None
+
+
+class ListJudgmentsRequest(BaseModel):
+    status: Optional[str] = None
+    county: Optional[str] = None
+    limit: Optional[int] = 100
+    order_by: Optional[str] = "created_at"
 
 
 # Communication Models
@@ -577,6 +601,290 @@ async def delete_lien(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Judgment Tracker Endpoints
+# =============================================================================
+
+@app.post("/api/judgments", tags=["Judgment Tracker"])
+async def create_judgment(
+    request: CreateJudgmentRequest,
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Create a new civil judgment"""
+    try:
+        agent = JudgmentTrackerAgent(storage=storage)
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="create_judgment",
+            parameters=request.model_dump()
+        )
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/judgments", tags=["Judgment Tracker"])
+async def list_judgments(
+    status: Optional[str] = None,
+    county: Optional[str] = None,
+    limit: int = 100,
+    order_by: str = "created_at",
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """List all judgments with optional filters"""
+    try:
+        agent = JudgmentTrackerAgent(storage=storage)
+
+        parameters = {
+            "limit": limit,
+            "order_by": order_by
+        }
+        if status:
+            parameters["status"] = status
+        if county:
+            parameters["county"] = county
+
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="list_judgments",
+            parameters=parameters
+        )
+        
+        # Return data directly for consistent frontend consumption
+        return result
+    except Exception as e:
+        logger.error(f"Error in list_judgments: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Probate Tracker Endpoints
+# =============================================================================
+
+class CreateProbateRequest(BaseModel):
+    deceased_name: str
+    date_of_death: str
+    case_status: str
+    county: str
+    status: Optional[str] = "ACTIVE"
+    asset_id: Optional[str] = None
+    attorney_contact: Optional[str] = None
+
+class ListProbateRequest(BaseModel):
+    case_status: Optional[str] = None
+    county: Optional[str] = None
+    limit: Optional[int] = 100
+    order_by: Optional[str] = "created_at"
+
+@app.post("/api/probate", tags=["Probate Tracker"])
+async def create_probate(
+    request: CreateProbateRequest,
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Create a new probate estate"""
+    try:
+        agent = ProbateTrackerAgent(storage=storage)
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="create_probate",
+            parameters=request.model_dump()
+        )
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/probate", tags=["Probate Tracker"])
+async def list_probate(
+    case_status: Optional[str] = None,
+    county: Optional[str] = None,
+    limit: int = 100,
+    order_by: str = "created_at",
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """List all probates with optional filters"""
+    try:
+        agent = ProbateTrackerAgent(storage=storage)
+
+        parameters = {
+            "limit": limit,
+            "order_by": order_by
+        }
+        if case_status:
+            parameters["case_status"] = case_status
+        if county:
+            parameters["county"] = county
+
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="list_probate",
+            parameters=parameters
+        )
+        
+        # Return data directly for consistent frontend consumption
+        return result
+    except Exception as e:
+        logger.error(f"Error in list_probate: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Mineral Tracker Endpoints
+# =============================================================================
+
+class CreateMineralRequest(BaseModel):
+    legal_description: str
+    net_mineral_acres: float
+    royalty_decimal: float
+    operator_name: str
+    county: str
+    status: Optional[str] = "ACTIVE"
+    asset_id: Optional[str] = None
+    purchase_amount: Optional[float] = 0.0
+    interest_rate: Optional[float] = 0.0
+
+class ListMineralRequest(BaseModel):
+    operator_name: Optional[str] = None
+    county: Optional[str] = None
+    limit: Optional[int] = 100
+    order_by: Optional[str] = "created_at"
+
+@app.post("/api/minerals", tags=["Mineral Tracker"])
+async def create_mineral(
+    request: CreateMineralRequest,
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Create a new mineral right"""
+    try:
+        agent = MineralTrackerAgent(storage=storage)
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="create_mineral",
+            parameters=request.model_dump()
+        )
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/minerals", tags=["Mineral Tracker"])
+async def list_minerals(
+    operator_name: Optional[str] = None,
+    county: Optional[str] = None,
+    limit: int = 100,
+    order_by: str = "created_at",
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """List all minerals with optional filters"""
+    try:
+        agent = MineralTrackerAgent(storage=storage)
+
+        parameters = {
+            "limit": limit,
+            "order_by": order_by
+        }
+        if operator_name:
+            parameters["operator_name"] = operator_name
+        if county:
+            parameters["county"] = county
+
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="list_mineral",
+            parameters=parameters
+        )
+        
+        # Return data directly for consistent frontend consumption
+        return result
+    except Exception as e:
+        logger.error(f"Error in list_minerals: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Surplus Tracker Endpoints
+# =============================================================================
+
+class CreateSurplusRequest(BaseModel):
+    foreclosure_date: str
+    winning_bid_amount: float
+    total_debt_owed: float
+    surplus_amount: float
+    claim_deadline: str
+    county: str
+    status: Optional[str] = "ACTIVE"
+    asset_id: Optional[str] = None
+    purchase_amount: Optional[float] = 0.0
+    interest_rate: Optional[float] = 0.0
+
+class ListSurplusRequest(BaseModel):
+    county: Optional[str] = None
+    limit: Optional[int] = 100
+    order_by: Optional[str] = "created_at"
+
+@app.post("/api/surplus", tags=["Surplus Tracker"])
+async def create_surplus(
+    request: CreateSurplusRequest,
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Create a new surplus fund"""
+    try:
+        agent = SurplusTrackerAgent(storage=storage)
+        
+        # Parse dates
+        params = request.model_dump()
+        params["foreclosure_date"] = datetime.strptime(params["foreclosure_date"], "%Y-%m-%d").date()
+        params["claim_deadline"] = datetime.strptime(params["claim_deadline"], "%Y-%m-%d").date()
+
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="create_surplus",
+            parameters=params
+        )
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/surplus", tags=["Surplus Tracker"])
+async def list_surplus(
+    county: Optional[str] = None,
+    limit: int = 100,
+    order_by: str = "created_at",
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """List all surplus funds with optional filters"""
+    try:
+        agent = SurplusTrackerAgent(storage=storage)
+
+        parameters = {
+            "limit": limit,
+            "order_by": order_by
+        }
+        if county:
+            parameters["county"] = county
+
+        result = await agent.run(
+            tenant_id=tenant_id,
+            task="list_surplus",
+            parameters=parameters
+        )
+        
+        # Return data directly for consistent frontend consumption
+        return result
+    except Exception as e:
+        logger.error(f"Error in list_surplus: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

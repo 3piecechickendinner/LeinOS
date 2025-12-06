@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from core.base_agent import LienOSBaseAgent
 
-from core.data_models import AgentContext, InterestCalculation
+from core.data_models import AgentContext, InterestCalculation, TaxLien, CivilJudgment
 
 from core.storage import FirestoreClient
 
@@ -76,113 +76,121 @@ class InterestCalculatorAgent(LienOSBaseAgent):
 
         """
 
-        if not context.lien_ids or len(context.lien_ids) == 0:
+        if not context.lien_ids and not context.asset_ids:
+            # Fallback to check empty lists
+            if (not context.lien_ids or len(context.lien_ids) == 0) and \
+               (not context.asset_ids or len(context.asset_ids) == 0):
+                raise ValueError("lien_id or asset_id required in context")
 
-            raise ValueError("lien_id required in context.lien_ids")
-
+        # Prefer asset_id if available, else lien_id
+        asset_id = context.asset_ids[0] if context.asset_ids else context.lien_ids[0]
         
-
-        lien_id = context.lien_ids[0]
-
+        # Try getting as Tax Lien first (default collection "liens")
+        asset_data = await self.storage.get("liens", asset_id, context.tenant_id)
+        asset_type = "TAX_LIEN"
         
+        if not asset_data:
+            # Check other verticals
+            collections = {
+                "judgments": "CIVIL_JUDGMENT",
+                "probate_estates": "PROBATE",
+                "minerals": "MINERAL_RIGHT",
+                "surplus_funds": "SURPLUS_FUND"
+            }
+            
+            found = False
+            for coll, type_name in collections.items():
+                asset_data = await self.storage.get(coll, asset_id, context.tenant_id)
+                if asset_data:
+                    asset_type = type_name
+                    found = True
+                    break
+            
+            if not found:
+                 raise ValueError(f"Asset {asset_id} not found or unauthorized")
 
-        # Get lien from storage
+        # Logic based on Asset Type
+        if asset_type == "PROBATE":
+            estimated_value = Decimal(str(asset_data.get("estimated_value", "0.0")))
+            mortgages = Decimal(str(asset_data.get("mortgages_amount", "0.0")))
+            liens = Decimal(str(asset_data.get("liens_amount", "0.0")))
+            equity = estimated_value - (mortgages + liens)
+            
+            return {
+                "asset_id": asset_id,
+                "asset_type": asset_type,
+                "label": "Estimated Equity",
+                "value": float(equity),
+                "calculation_date": date.today().isoformat()
+            }
+            
+        elif asset_type == "MINERAL_RIGHT":
+            acres = Decimal(str(asset_data.get("net_mineral_acres", "0.0")))
+            royalty = Decimal(str(asset_data.get("royalty_decimal", "0.0")))
+            # Constants for estimation: $80/bbl oil price, 30 bbl/acre yield
+            # TODO: Make these configurable
+            oil_price = Decimal("80.0")
+            yield_per_acre = Decimal("30.0")
+            
+            monthly_revenue = acres * royalty * oil_price * yield_per_acre
+            
+            return {
+                "asset_id": asset_id,
+                "asset_type": asset_type,
+                "label": "Monthly Revenue Estimate",
+                "value": float(monthly_revenue),
+                "calculation_date": date.today().isoformat()
+            }
+            
+        elif asset_type == "SURPLUS_FUND":
+            surplus_amount = Decimal(str(asset_data.get("surplus_amount", "0.0")))
+            # 30% recovery fee
+            potential_fee = surplus_amount * Decimal("0.30")
+            
+            return {
+                "asset_id": asset_id,
+                "asset_type": asset_type,
+                "label": "Potential Fee",
+                "value": float(potential_fee),
+                "calculation_date": date.today().isoformat()
+            }
 
-        lien_data = await self.storage.get("liens", lien_id, context.tenant_id)
+        # Existing Tax Lien and Judgment Logic (using simple interest)
+        else:
+            # Extract calculation parameters
+            if asset_type == "TAX_LIEN":
+                principal = Decimal(str(asset_data.get("purchase_amount", 0)))
+                rate = Decimal(str(asset_data.get("interest_rate", 0)))
+                if "purchase_date" in asset_data:
+                    start_date = datetime.strptime(asset_data["purchase_date"], "%Y-%m-%d").date()
+                else:
+                    start_date = date.today()
+            else: # CIVIL_JUDGMENT
+                principal = Decimal(str(asset_data.get("judgment_amount", 0)))
+                # Default to 0 if not present
+                rate = Decimal(str(asset_data.get("interest_rate", 0)))
+                if "judgment_date" in asset_data:
+                    start_date = datetime.strptime(asset_data["judgment_date"], "%Y-%m-%d").date()
+                else:
+                    start_date = date.today()
 
-        if not lien_data:
+            end_date = date.today()
+            days_elapsed = (end_date - start_date).days
+            
+            if days_elapsed < 0:
+                days_elapsed = 0
 
-            raise ValueError(f"Lien {lien_id} not found or unauthorized")
+            # Interest = Principal * (Rate/100) * (Days/365)
+            interest = principal * (rate / Decimal(100)) * (Decimal(days_elapsed) / Decimal(365))
+            total_owed = principal + interest
 
-        
-
-        # Extract calculation parameters
-
-        principal = Decimal(str(lien_data["purchase_amount"]))
-
-        interest_rate = Decimal(str(lien_data["interest_rate"]))
-
-        sale_date = lien_data["sale_date"]
-
-        
-
-        # Calculate days elapsed
-
-        if isinstance(sale_date, str):
-
-            sale_date = date.fromisoformat(sale_date)
-
-        
-
-        days_elapsed = (date.today() - sale_date).days
-
-        
-
-        # Simple interest formula: I = P × R × T
-
-        # Where T = days / 365, R is annual rate as decimal (e.g., 18% = 0.18)
-
-        interest_accrued = principal * (interest_rate / 100) * (Decimal(days_elapsed) / Decimal(365))
-
-        total_owed = principal + interest_accrued
-
-        
-
-        # Create InterestCalculation record
-
-        calculation = InterestCalculation(
-
-            lien_id=lien_id,
-
-            tenant_id=context.tenant_id,
-
-            calculation_date=date.today(),
-
-            principal=principal,
-
-            interest_rate=interest_rate,
-
-            days_elapsed=days_elapsed,
-
-            interest_accrued=interest_accrued,
-
-            total_owed=total_owed,
-
-            calculated_at=datetime.utcnow()
-
-        )
-
-        
-
-        # Save to storage
-
-        calc_dict = calculation.model_dump()
-
-        calc_dict["calculation_id"] = f"{lien_id}_{date.today().isoformat()}"
-
-        await self.storage.create("interest_calculations", calc_dict, context.tenant_id)
-
-        
-
-        self.log_info(f"Calculated interest for lien {lien_id}: ${interest_accrued:.2f}")
-
-        
-
-        return {
-
-            "lien_id": lien_id,
-
-            "principal": float(principal),
-
-            "interest_rate": float(interest_rate),
-
-            "days_elapsed": days_elapsed,
-
-            "interest_accrued": float(interest_accrued),
-
-            "total_owed": float(total_owed),
-
-            "calculation_date": date.today().isoformat()
-
-        }
-
+            return {
+                "asset_id": asset_id,
+                "asset_type": asset_type,
+                "label": "Total Owed",
+                "principal": float(principal),
+                "interest_accrued": float(interest),
+                "total_owed": float(total_owed),
+                "days_elapsed": days_elapsed,
+                "calculation_date": end_date.isoformat()
+            }

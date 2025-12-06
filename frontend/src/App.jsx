@@ -1,27 +1,31 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { VerticalProvider } from './context/VerticalContext';
 import AppLayout from './layout/AppLayout';
 import DashboardPage from './pages/DashboardPage';
-import LiensListPage from './pages/LiensListPage';
+import AssetsListPage from './pages/AssetsListPage';
 import LienDetailPage from './pages/LienDetailPage';
-import AddLienPage from './pages/AddLienPage';
+import AddAssetPage from './pages/AddAssetPage';
 import NotificationsPage from './pages/NotificationsPage';
 import DeadlinesPage from './pages/DeadlinesPage';
 import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<AppLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="liens" element={<LiensListPage />} />
-        <Route path="liens/new" element={<AddLienPage />} />
-        <Route path="liens/:id" element={<LienDetailPage />} />
-        <Route path="deadlines" element={<DeadlinesPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
-    </Routes>
+    <VerticalProvider>
+      <Routes>
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="assets" element={<AssetsListPage />} />
+          <Route path="assets/new" element={<AddAssetPage />} />
+          <Route path="assets/:id" element={<LienDetailPage />} />
+          <Route path="liens" element={<Navigate to="/assets" replace />} />
+          <Route path="deadlines" element={<DeadlinesPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </VerticalProvider>
   );
 }
 

@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 
 from core.base_agent import LienOSBaseAgent
-from core.data_models import AgentContext, Deadline, Notification, NotificationType
+from core.data_models import AgentContext, Deadline, Notification, NotificationType, TaxLien, CivilJudgment
 from core.storage import FirestoreClient
 
 
@@ -47,25 +47,87 @@ class DeadlineAlertAgent(LienOSBaseAgent):
             raise ValueError(f"Unknown task: {context.task}")
 
     async def _create_deadline(self, context: AgentContext) -> Dict[str, Any]:
-        """Create a new deadline for a lien"""
-        if not context.lien_ids or len(context.lien_ids) == 0:
-            raise ValueError("lien_id required in context.lien_ids")
+        """Create a new deadline for a lien or judgment"""
+        if not context.lien_ids and not context.asset_ids:
+            if (not context.lien_ids or len(context.lien_ids) == 0) and \
+               (not context.asset_ids or len(context.asset_ids) == 0):
+                raise ValueError("lien_id or asset_id required in context")
 
-        lien_id = context.lien_ids[0]
+        # Prefer asset_id if available, else lien_id
+        asset_id = context.asset_ids[0] if context.asset_ids else context.lien_ids[0]
 
-        # Get lien to extract deadline info
-        lien_data = await self.storage.get("liens", lien_id, context.tenant_id)
-        if not lien_data:
-            raise ValueError(f"Lien {lien_id} not found")
+        # Try getting as Tax Lien
+        asset_data = await self.storage.get("liens", asset_id, context.tenant_id)
+        asset_type = "TAX_LIEN"
+        
+        if not asset_data:
+            # Check other verticals
+            collections = {
+                "judgments": "CIVIL_JUDGMENT",
+                "probate_estates": "PROBATE",
+                "minerals": "MINERAL_RIGHT",
+                "surplus_funds": "SURPLUS_FUND"
+            }
+            found = False
+            for coll, type_name in collections.items():
+                asset_data = await self.storage.get(coll, asset_id, context.tenant_id)
+                if asset_data:
+                    asset_type = type_name
+                    found = True
+                    break
+            
+            if not found:
+                 raise ValueError(f"Asset {asset_id} not found")
 
-        # Create deadline for redemption period
+        # Determine deadline details based on asset type
+        if asset_type == "CIVIL_JUDGMENT":
+            deadline_date = asset_data.get("statute_limitations_date")
+            if not deadline_date:
+                # Fallback or error
+                # For this logic, we'll error if critical date missing
+                raise ValueError(f"statute_limitations_date missing for judgment {asset_id}")
+            description = "Judgment Expiration / Renewal Deadline"
+            deadline_suffix = "expiration"
+            
+        elif asset_type == "PROBATE":
+            # Logic: Filing Date + 6 Months
+            filing_date_str = asset_data.get("probate_filing_date")
+            if not filing_date_str:
+                raise ValueError(f"probate_filing_date missing for probate {asset_id}")
+            filing_date = date.fromisoformat(filing_date_str)
+            deadline_date = (filing_date + timedelta(days=180)).isoformat()
+            description = "Creditor Claim Period Ends"
+            deadline_suffix = "claim_period"
+            
+        elif asset_type == "MINERAL_RIGHT":
+            deadline_date = asset_data.get("lease_expiration_date")
+            if not deadline_date:
+                raise ValueError(f"lease_expiration_date missing for mineral {asset_id}")
+            description = "Primary Term Expiration"
+            deadline_suffix = "lease_expiration"
+            
+        elif asset_type == "SURPLUS_FUND":
+            deadline_date = asset_data.get("claim_deadline")
+            if not deadline_date:
+                raise ValueError(f"claim_deadline missing for surplus {asset_id}")
+            description = "Escheatment Deadline"
+            deadline_suffix = "escheatment"
+            
+        else: # TAX_LIEN
+            deadline_date = asset_data.get("redemption_deadline")
+            if not deadline_date:
+                 raise ValueError(f"redemption_deadline missing for lien {asset_id}")
+            description = f"Redemption deadline for {asset_data.get('property_address', 'Unknown Property')}"
+            deadline_suffix = "redemption"
+
+        # Create deadline
         deadline = Deadline(
-            deadline_id=f"{lien_id}_redemption",
-            lien_id=lien_id,
+            deadline_id=f"{asset_id}_{deadline_suffix}",
+            lien_id=asset_id,
             tenant_id=context.tenant_id,
-            deadline_type="redemption",
-            deadline_date=lien_data["redemption_deadline"],
-            description=f"Redemption deadline for {lien_data['property_address']}",
+            deadline_type=deadline_suffix,
+            deadline_date=deadline_date,
+            description=description,
             alert_days_before=[90, 60, 30, 14, 7, 3, 1],
             alerts_sent=[],
             is_completed=False
@@ -74,11 +136,11 @@ class DeadlineAlertAgent(LienOSBaseAgent):
         deadline_dict = deadline.model_dump()
         await self.storage.create("deadlines", deadline_dict, context.tenant_id)
 
-        self.log_info(f"Created deadline for lien {lien_id}")
+        self.log_info(f"Created deadline for asset {asset_id}")
 
         return {
             "deadline_id": deadline.deadline_id,
-            "lien_id": lien_id,
+            "asset_id": asset_id,
             "deadline_date": deadline.deadline_date.isoformat(),
             "created": True
         }

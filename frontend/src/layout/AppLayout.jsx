@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileText,
@@ -9,12 +9,14 @@ import {
   LogOut,
   Menu,
   X,
+  Layers
 } from 'lucide-react';
 import apiClient from '../api/client';
+import { useVertical } from '../context/VerticalContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Liens', href: '/liens', icon: FileText },
+  { name: 'Assets', href: '/assets', icon: FileText },
   { name: 'Deadlines', href: '/deadlines', icon: Calendar },
   { name: 'Notifications', href: '/notifications', icon: Bell, showBadge: true },
 ];
@@ -39,10 +41,10 @@ function SidebarLink({ item, unreadCount, onClick }) {
       }
     >
       <item.icon className="h-4 w-4" />
-      <span className="flex-1">{item.name}</span>
+      {item.name}
       {showBadge && (
-        <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-semibold text-white bg-red-500 rounded-full">
-          {unreadCount > 99 ? '99+' : unreadCount}
+        <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+          {unreadCount}
         </span>
       )}
     </NavLink>
@@ -51,27 +53,24 @@ function SidebarLink({ item, unreadCount, onClick }) {
 
 export function AppLayout() {
   const navigate = useNavigate();
+  const { currentVertical, setCurrentVertical } = useVertical();
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    async function fetchUnreadCount() {
+      try {
+        const response = await apiClient.getUnreadNotificationCount();
+        setUnreadCount(response?.count || 0);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    }
     fetchUnreadCount();
 
-    // Poll for unread count every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  async function fetchUnreadCount() {
-    try {
-      const response = await apiClient.getUnreadNotificationCount();
-      setUnreadCount(response?.count || 0);
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
-    }
-  }
-
-  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -79,7 +78,7 @@ export function AppLayout() {
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
-          onClick={closeMobileMenu}
+          onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
@@ -94,10 +93,9 @@ export function AppLayout() {
       >
         {/* Logo */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-slate-200">
-          <span className="text-lg font-bold text-slate-900">LienOS</span>
-          {/* Close button - Mobile only */}
+          <span className="text-lg font-bold text-slate-900">AssetOS</span>
           <button
-            onClick={closeMobileMenu}
+            onClick={() => setMobileMenuOpen(false)}
             className="md:hidden p-2 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -111,7 +109,7 @@ export function AppLayout() {
               key={item.name}
               item={item}
               unreadCount={unreadCount}
-              onClick={closeMobileMenu}
+              onClick={() => setMobileMenuOpen(false)}
             />
           ))}
         </nav>
@@ -123,7 +121,7 @@ export function AppLayout() {
               key={item.name}
               item={item}
               unreadCount={0}
-              onClick={closeMobileMenu}
+              onClick={() => setMobileMenuOpen(false)}
             />
           ))}
           <button
@@ -147,13 +145,21 @@ export function AppLayout() {
             <Menu className="h-6 w-6" />
           </button>
 
-          {/* Title - hidden on mobile */}
-          <h1 className="hidden md:block text-sm font-medium text-slate-900">
-            Tax Lien Management
-          </h1>
-
-          {/* Logo - mobile only */}
-          <span className="md:hidden text-base font-bold text-slate-900">LienOS</span>
+          {/* Vertical Selector */}
+          <div className="flex items-center gap-3">
+            <Layers className="h-5 w-5 text-slate-500 hidden sm:block" />
+            <select
+              value={currentVertical}
+              onChange={(e) => setCurrentVertical(e.target.value)}
+              className="bg-slate-50 border-none text-sm font-semibold text-slate-900 focus:ring-0 cursor-pointer py-1 pl-2 pr-8 rounded-md hover:bg-slate-100 transition-colors block w-full sm:w-auto"
+            >
+              <option value="tax_lien">Tax Liens</option>
+              <option value="civil_judgment">Civil Judgments</option>
+              <option value="probate">Probate</option>
+              <option value="mineral_rights">Mineral Rights</option>
+              <option value="surplus_funds">Surplus Funds</option>
+            </select>
+          </div>
 
           <div className="flex items-center gap-2 md:gap-4">
             <button

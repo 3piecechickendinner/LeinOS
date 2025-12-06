@@ -3,6 +3,7 @@
 import uuid
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from decimal import Decimal
 import asyncio
 import logging
 
@@ -264,6 +265,18 @@ class FirestoreClient:
             "sms_queue": "sms_queue"
         }
 
+    def _sanitize_data(self, data: Any) -> Any:
+        """
+        Recursively convert Decimal to float for Firestore compatibility.
+        """
+        if isinstance(data, dict):
+            return {k: self._sanitize_data(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_data(v) for v in data]
+        elif isinstance(data, Decimal):
+            return float(data)
+        return data
+
     async def create(
         self,
         collection_name: str,
@@ -300,6 +313,9 @@ class FirestoreClient:
         now = datetime.utcnow()
         data["created_at"] = now
         data["updated_at"] = now
+        
+        # Sanitize data (convert Decimals)
+        data = self._sanitize_data(data)
 
         # Get collection reference
         collection_ref = self.db.collection(self.collections.get(collection_name, collection_name))
@@ -349,7 +365,8 @@ class FirestoreClient:
         # Security check: Verify tenant_id matches
         # This prevents tenants from accessing other tenants' data
         doc_data = doc.to_dict()
-        if doc_data.get("tenant_id") != tenant_id:
+        stored_tenant = doc_data.get("tenant_id")
+        if stored_tenant != tenant_id:
             return None
 
         return doc_data
@@ -396,6 +413,7 @@ class FirestoreClient:
         collection_ref = self.db.collection(self.collections.get(collection_name, collection_name))
 
         # Update document (run in thread pool since Firestore client is synchronous)
+        updates = self._sanitize_data(updates)
         loop = asyncio.get_event_loop()
         doc_ref = collection_ref.document(doc_id)
         await loop.run_in_executor(None, doc_ref.update, updates)
